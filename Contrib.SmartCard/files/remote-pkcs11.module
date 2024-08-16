@@ -1,4 +1,5 @@
 module: p11-kit-client.so
 
-disable-in: gnome-calculator
+remote: |/bin/sh -c "test -f /var/run/qubes-service/remote-pkcs11 && /usr/bin/qrexec-client-vm core-usb liteqube.pkcs11"
 
+disable-in: gnome-calculator gnome-terminal #enable-in: openssh-agent

@@ -1,2 +1,2 @@
 #!/bin/sh
-/usr/bin/nc -U /tmp/pkcs11.socket
+/usr/bin/p11-kit remote /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so

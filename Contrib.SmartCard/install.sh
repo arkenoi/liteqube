@@ -2,10 +2,10 @@
 
 
 # Space-separated list of qubes having access to smartcards
-QUBES_SMARTCARD_CLIENTS="Office Dev"
+QUBES_SMARTCARD_CLIENTS="Office Dev Finance"
 SMARTCARD_MODCONFIG="
-#disable-in: gnome-calculator gnome-terminal
-enable-in: openssh-agent
+disable-in: gnome-calculator gnome-terminal
+#enable-in: openssh-agent
 "
 
 VM_SC=core-usb
@@ -27,15 +27,18 @@ vm_exists "${VM_SC}" || ( vm_create "${VM_SC}" "dispvm" && vm_configure "${VM_SC
 vm_fail_if_missing "${VM_SC}"
 
 message "CONFIGURING ${YELLOW}${VM_CORE}"
-install_packages "${VM_CORE}" p11-kit pcscd opensc opensc-pkcs11 qubes-u2f
+# Ugly versioning, but seems that debian-core has messed up repo priorities
+install_packages "${VM_CORE}" p11-kit pcscd opensc opensc-pkcs11 gnutls-bin python3-fido2=1.1.2-2+deb12u1
+# XXX I have no idea why this line does not work, need to investigate
+#install_packages "${VM_CORE}" qubes-ctap
+push_command "${VM_CORE}" "aptitude -y install qubes-ctap" 
 push_files "${VM_CORE}"
 push_command "${VM_CORE}" "systemctl daemon-reload" 
 push_command "${VM_CORE}" "systemctl enable pcscd.service" 
-push_command "${VM_CORE}" "systemctl enable liteqube-pkcs11.service"
 qvm-service -e ${VM_SC} liteqube-pkcs11
 
 message "CONFIGURING ${YELLOW}dom0"
-sudo qubes-dom0-update --console --show-output qubes-u2f-dom0
+#sudo qubes-dom0-update --console --show-output qubes-u2f-dom0
 push_files "dom0"
 for VM in ${QUBES_SMARTCARD_CLIENTS} ; do
     add_permission "pkcs11" "${VM}" "${VM_SC}" "allow,target=${VM_SC}"
@@ -49,28 +52,24 @@ message "INSTALLING ${YELLOW}p11-kit${PREFIX} TO TEMPLATES"
 TEMPLATES_MODIFIED=""
 for VM in ${QUBES_SMARTCARD_CLIENTS} ; do
     qvm-service -e ${VM} remote-pkcs11
-    qvm-service -e ${VM} qubes-u2f-proxy
+    qvm-service -e ${VM} qubes-ctapproxy
     TEMPLATE="$(vm_find_template "${VM}")"
     if ! echo "${TEMPLATES_MODIFIED}" | grep "^${VM}$$" >/dev/null 2>&1 ; then
         TEMPLATE_TYPE="$(vm_type "${TEMPLATE}")"
         case "${TEMPLATE_TYPE}" in
             debian)
                 push_command "${TEMPLATE}" "apt-get install p11-kit ncat"
-                push_command "${TEMPLATE}" "systemctl enable qubes-u2fproxy@${VM_SC}"
-		cp "./files/remote-pkcs11.module.in" "./files/remote-pkcs11.module"
+                push_command "${TEMPLATE}" "systemctl enable qubes-ctapproxy@${VM_SC}"
+		sed -e "s/TARGET/${VM_SC}/" <"./files/remote-pkcs11.module.in" >"./files/remote-pkcs11.module"
 		echo ${SMARTCARD_MODCONFIG} >>"./files/remote-pkcs11.module"
                 file_to_vm "./files/remote-pkcs11.module" "${TEMPLATE}" "/usr/share/p11-kit/modules/remote-pkcs11.module"
-                file_to_vm "./files/remote-pkcs11@.service" "${TEMPLATE}" "/lib/systemd/user/remote-pkcs11@.service"
-                file_to_vm "./files/remote-pkcs11@.socket" "${TEMPLATE}" "/lib/systemd/user/remote-pkcs11@.socket"
-                push_command "${TEMPLATE}" "systemctl enable --global remote-pkcs11@${VM_SC}.socket"
                 ;;
             fedora)
-                push_command "${TEMPLATE}" "dnf install p11-kit nmap-ncat"
-                push_command "${TEMPLATE}" "systemctl enable qubes-u2fproxy@${VM_SC}"
+                push_command "${TEMPLATE}" "dnf install qubes-ctap p11-kit nmap-ncat"
+                push_command "${TEMPLATE}" "systemctl enable qubes-ctapproxy@${VM_SC}"
+		sed -e "s/TARGET/${VM_SC}/" <"./files/remote-pkcs11.module.in" >"./files/remote-pkcs11.module"
+		echo ${SMARTCARD_MODCONFIG} >>"./files/remote-pkcs11.module"
                 file_to_vm "./files/remote-pkcs11.module" "${TEMPLATE}" "/usr/share/p11-kit/modules/remote-pkcs11.module"
-                file_to_vm "./files/remote-pkcs11@.service" "${TEMPLATE}" "/usr/lib/systemd/user/remote-pkcs11@.service"
-                file_to_vm "./files/remote-pkcs11@.socket" "${TEMPLATE}" "/usr/lib/systemd/user/remote-pkcs11@.socket"
-                push_command "${TEMPLATE}" "systemctl enable --global remote-pkcs11@${VM_SC}.socket"
                 ;;
             *)
                 message "ERROR: DON'T KNOW HOW TO HANDLE ${YELLOW}${TEMPLATE_TYPE}"
