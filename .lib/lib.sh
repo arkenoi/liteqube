@@ -4,10 +4,10 @@
 ###################
 
 # Root partidion size of template vm in Mb
-ROOT_DISK_MB=2560
+ROOT_DISK_MB=4096
 
 # Private partition size of template and dvm template vms
-PRIVATE_DISK_MB=512
+PRIVATE_DISK_MB=1024
 
 # Name os the LVM volume group that holds vm data
 VM_GROUP="qubes_dom0-vm"
@@ -16,7 +16,7 @@ VM_GROUP="qubes_dom0-vm"
 # VM NAMES & COLORS #
 #####################
 
-VM_BASE="debian-11-minimal"
+VM_BASE="debian-12-minimal"
 VM_CORE="debian-core"
 VM_DVM="core-dvm"
 VM_XORG="core-xorg"
@@ -251,9 +251,10 @@ dom0_command()
 {
     _FILE="${1}"
 
+
     [ -d ~/bin ] || mkdir ~/bin
     cp "./files/${_FILE}" ~/bin
-    chmod +x "~/bin/${_FILE}"
+    chmod +x ~/bin/"${_FILE}"
 }
 
 dom0_install_command()

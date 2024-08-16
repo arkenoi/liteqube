@@ -8,11 +8,11 @@ USE_MIRAGE="False"
 NETVM_DISPOSABLE="True"
 
 # Space-separated list of package names [with network cards firmware] to install
-FIRMWARE_PACKAGES="firmware-iwlwifi"
+#FIRMWARE_PACKAGES="firmware-iwlwifi"
 
 # Net vm memory in Mb. Default works fine for intel drivers but you may need to allocate
 # more memory if net qube crashes or hangs on start.
-NET_VM_MEMORY="240"
+NET_VM_MEMORY="512"
 
 # Set to "True" to not require PCI device reset
 NET_NO_STRICT_RESET="True"
@@ -136,7 +136,7 @@ if [ x"${USE_MIRAGE}" = x"True" ] ; then  # Mirage firewall
     message "CONFIGURING ${YELLOW}${VM_FW_TOR}"
     qvm-prefs --quiet --set "${VM_FW_TOR}" label "${COLOR_WORKERS}"
     qvm-prefs --quiet --set "${VM_FW_TOR}" maxmem 0
-    qvm-prefs --quiet --set "${VM_FW_TOR}" memory 64
+    qvm-prefs --quiet --set "${VM_FW_TOR}" memory 640
     qvm-prefs --quiet --set "${VM_FW_TOR}" vcpus 1
     qvm-prefs --quiet --set "${VM_FW_TOR}" provides_network True
     if cat /var/lib/qubes/vm-kernels/mirage-firewall/vmlinuz | grep Solo5 >/dev/null 2>&1 ; then
@@ -445,7 +445,8 @@ fi
 message "CONFIGURING ${YELLOW}${VM_UPDATE}"
 qvm-prefs --quiet --set "${VM_UPDATE}" maxmem 0
 qvm-prefs --quiet --set "${VM_UPDATE}" memory 4096
-qvm-prefs --quiet --set "${VM_UPDATE}" netvm "${VM_FW_TOR}"
+#qvm-prefs --quiet --set "${VM_UPDATE}" netvm "${VM_FW_TOR}"
+qvm-prefs --quiet --set "${VM_UPDATE}" netvm sys-whonix
 #qvm-prefs --quiet --set "${VM_UPDATE}" guivm ''
 qvm-prefs --quiet --set "${VM_UPDATE}" audiovm ''
 qvm-prefs --quiet --set "${VM_UPDATE}" vcpus 2
@@ -520,10 +521,10 @@ qvm-shutdown --quiet --wait --force "${VM_FW_TOR}"
 qvm-shutdown --quiet --wait --force "${VM_TOR}"
 qvm-shutdown --quiet --wait --force "${VM_FW_NET}"
 qvm-shutdown --quiet --wait --force "${VM_NET}"
-qvm-prefs --quiet --set "${VM_FW_NET}" memory 128
-qvm-prefs --quiet --set "${VM_FW_TOR}" memory 128
+qvm-prefs --quiet --set "${VM_FW_NET}" memory 256
+qvm-prefs --quiet --set "${VM_FW_TOR}" memory 256
 qvm-prefs --quiet --set "${VM_NET}" memory "${NET_VM_MEMORY}"
-qvm-prefs --quiet --set "${VM_TOR}" memory 176
+qvm-prefs --quiet --set "${VM_TOR}" memory 512
 qvm-start --quiet --skip-if-running "${VM_NET}"
 
 
