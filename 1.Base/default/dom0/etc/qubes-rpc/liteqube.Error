@@ -12,6 +12,6 @@ LINEBREAK="
 "
 
 #sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u critical -t 5000 -i dialog-error \"${QREXEC_REMOTE_DOMAIN}$LINEBREAK${1//_/ }\"" >/dev/null 2>&1
-sudo -u user /bin/sh -c "DISPLAY=:0 notify-send -u critical -t 5000 -i dialog-error \"${QREXEC_REMOTE_DOMAIN}$LINEBREAK${1//_/ }\"" >/dev/null 2>&1
+sudo -u "#1000" /bin/sh -c "DISPLAY=:0 notify-send -u critical -t 5000 -i dialog-error \"${QREXEC_REMOTE_DOMAIN}$LINEBREAK${1//_/ }\"" >/dev/null 2>&1
 
 exit 0
