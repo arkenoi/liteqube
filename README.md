@@ -1,10 +1,19 @@
 
 # Liteqube puts Qubes OS on a diet
 
-Liteqube was created in 2017 to run Qubes on a rather low-spec GPD Win 2 (Core m3-7Y30, 8Mb RAM). Taking 2Gb of RAM to run dom0 and fully torified set of services, it allowed me to use a device with 8MB of RAM quite comfortably.
+Copyright (C) 2017-2023  Alex Barinov
+COpyright (c) 2023-2024  Alex Smirnoff
 
-5 years further down the road, Liteqube grew wider but not fatter and still pursues the original goals:
- 1. Low memory consumption; 1Gb of RAM required to run network, firewall, tor and usb qubes
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see [here](https://www.gnu.org/licenses/).
+
+Liteqube was created in 2017 by Alex Barinov (https://github.com/a-barinov) to run Qubes on a rather low-spec GPD Win 2 (Core m3-7Y30, 8Mb RAM). Taking 2Gb of RAM to run dom0 and fully torified set of services, it allowed him to use a device with 8MB of RAM quite comfortably.
+
+7 years further down the road, Liteqube grew wider but not fatter (well, just a bit) and still pursues the original goals:
+ 1. Low memory consumption; 1.5Gb of RAM required to run network, firewall, tor and usb qubes. Technically it still could run within 1Gb, but we changed the defaults in the sake of optimal performance and stability.
  2. Services isolation: every service gets a separate qube to minimise damage from potential exploits; to the extent what default Qubes installation cannot offer due to heavy resource consumption of the default system qubes.
  3. Stateless disposable qubes for most of the services interacting with outside world
  4. Easy on ssd: most qubes run with read-only root fs, most volatile folders are kept on tmpfs
@@ -45,15 +54,15 @@ Here is the same install with Liteqube taking over network, firewall, tor and us
 You can see significantly reduced memory consumption, boot time and amount of disk writes.
 
 Here is how this level of efficiency is achieved:
- - Minimised Debian template is used to run the service qubes, spinned off from debian-11-minimal. It does not have a single package installed that's not required for the setup to work. Base system takes around 800Mb of disk space, it then goes up as additional services (e.g. tor, network-manager) are installed. This is the only template qube used so keeping the whole setup up-to-date is easy.
+ - Minimised Debian template is used to run the service qubes, spinned off from debian-12-minimal. It does not have a single package installed that's not required for the setup to work. Base system takes around 800Mb of disk space, it then goes up as additional services (e.g. tor, network-manager) are installed. This is the only template qube used so keeping the whole setup up-to-date is easy.
  - Most services run in disposable qubes ensuring these qubes are completely stateless. Notable exceptions are tor qube that needs to update guard nodes, and mail-receiving qube that needs to keep what's received in case power fails, Qubes OS crashes, or any other disaster occurs.
  - To initialise disposable qubes based on single template, a qube templating & boot-time check mechanism is used, inspired by vm-boot-protect project.
  - Qubes that don't need xorg for operation (most of them, really) run headless. A custom split-xorg setup is used in case you need an emergency shell.
  - Valuable stuff (files, passwords, ssh and gpg keys) are stored in a separate offline qube that provides key material to qubes that need it.
- - Existing Qubes install (both dom0 and user qubes) remains untouched. Liteqube will install a few packages to dom0 (if not installed already): qubes-template-debian-11-minimal, parted and gdisk, zenity and dialog, . The first three can be removed after the installation completes. Some rpc scripts and policies will be installed into `/etc/qubes-rpc`, all named `liteqube.xxx` so auditing them is easy. Some optional but helpful scripts will be put into `~/bin` folder with `lq-xxx` naming pattern.
+ - Existing Qubes install (both dom0 and user qubes) remains untouched. Liteqube will install a few packages to dom0 (if not installed already): qubes-template-debian-12-minimal, parted and gdisk, zenity and dialog, . The first three can be removed after the installation completes. Some rpc scripts and policies will be installed into `/etc/qubes-rpc`, all named `liteqube.xxx` so auditing them is easy. Some optional but helpful scripts will be put into `~/bin` folder with `lq-xxx` naming pattern.
 
 ### How to install:
- 1. Download liteqube-0.92.tar.gz [here:](https://github.com/a-barinov/liteqube/releases/tag/0.92).
+ 1. Download liteqube-0.95.tar.gz [here:](https://github.com/arkenoi/liteqube/releases/tag/0.92).
  2. Transfer it to dom0 and unpack to a folder of your choice.
  3. Go to '1.Base' folder, review, edit / change settings as needed and run `install.sh` script there.
  4. Once base system is installed, proceed with installation of the components you need from other folders.
@@ -77,6 +86,7 @@ A few installation notes:
  - You will need to respond 'Yes' once during the install as partition table changes in gdisk are not fully scriptable.
  - You will get one 'debian-core: files quarantined during boot' error message and one 'core-keys: files quarantined during boot' error message. This is normal and happens when templating mechanism gets rolled out first time.
  - There are two serious qubes backup bugs, [#5393](https://github.com/QubesOS/qubes-issues/issues/5393) and [#7176](https://github.com/QubesOS/qubes-issues/issues/7176). First one leaves you with corrupt backups, second with inability to restore. You've been warned!
+ - core-usb has usbguard enabled by default, and the installation may need more debug. If you ended up with [apparently] non-functional USB qube, it is most likely that it is a USBGuard config glitch. Run lq-xterm for debian-core, remount the root fs as rw (mount -o remount,rw /), and edit /etc/usbguard/rules.conf to make sure your policy is permissive enough.
 
 ### Network
 This script will create two firewalls (fw-net and fw-tor, equivalent of sys-firewall), network qube (core-net, equivalent of sys-net), tor qube (core-tor, equivalent of whonix-gw) and a separate qube to handle system updates (core-update).
@@ -134,6 +144,12 @@ Since some mail readers (e.g. Thunderbird) cannot use command line to receive an
 
 To automatically check mail every 30 minutes (configurable), a systemd user service can be created in dom0.
 
+### Smart card
+Adds qubes-ctap (fido2) and pkcs11 smartcard forwarding support to core-usb. Discoverable keys are not tested yet. pkcs11 remoting is implemented with p11-kit. If remote-pkcs11 service is enabled in the client qube, p11-kit-client.so attaches to the liteqube.pkcs11 service on core-usb via qrexec api, and the service calls p11-kit remote interface to opensc-pkcs11. It may be easily modified to use a proprietary middleware library instead of opensc-pkcs11. 
+
+Bugs: sometimes pcscd fails to autostart in core-usb, and the card may be undetected. Also, stalled client connections sometimes pile up, need to investigate.
+If you enable pkcs11 system-wide, ALL Gnome programs would try to attach to the smartcard, even if there is apparently no need for them to do so. It causes enormous number of system dialogs to appear and may be quite annoying.
+
 ### Templating mechanism
 This is the key service allowing Liteqube to run different disposable qubes off the same template. It runs very early on boot and checks private partition to ensure it contains only the files needed. Any file not fitting the configuration is put into quarantine or deleted.
 Setup is driven by `/etc/protect` folder that has 4 components:
@@ -185,6 +201,7 @@ Here are some details on the underlying setup in case you want to do some custom
 9. Restart Tor Browser
 
 Credits for this instruction go to @dostisurta on github
+It is doable for anon-whonix as well, but you won't get proper stream isolation, so this approach is not advised, it is better to keep sys-whonix running.
 
 ### Using Thunderbird with split-gpg
 Since version 78, Thunderbird uses built-in PGP implementation that does not work with split gpg. Here are the steps needed switch to using external gpg binary, assuming you already imported your gpg keys into core-keys and Thunderbird qubes:
@@ -205,11 +222,16 @@ Since version 78, Thunderbird uses built-in PGP implementation that does not wor
 9. Restart Thunderbird and send a test email to check your new setup.
 
 ### Further development
-The only bit to add before 1.0 release is tray applet providing user-friendly access to liteqube functionality.
+Before 1.0:
+
+ - Tray applet(s) providing user-friendly access to liteqube functionality;
+ - Lightweight core-net for wired-only connections without network-manager;
+ - Move everything back to salt. Liteqube for Qubes 4.1 was started as a set of salt scripts but shell seemed easier at the moment.
 
 The following components will be added after 1.0 release:
 
  - RDP/VNC: polish vnc support
+ - VPN: add more VPN types
  - USB: add bluetooth support
  - Dispvm core-net: suggest saving new WiFi accesspoints 
  - Base: add plausible deniability support for luks password, core-keys and vault qubes
@@ -220,7 +242,6 @@ The following improvements can be made to further enhance security, stability an
  - Improve security of Liteqube systemd services using builtin systemd tools.
  - Use SELinux (preferred but very difficult due to lack of default profiles) or AppArmour (easier but possibly less secure) to improve security of the apps (networkmanager, tor, exim, getmail, etc) used.
  - Add accelerated (see #[130](https://github.com/mirage/qubes-mirage-firewall/issues/130)) mirage firewall.
- - Move from shell scripts to Salt. Liteqube for Qubes 4.1 was started as a set of salt scripts but I switched to pure shell once I realised I spend more time fighting with salt formulas than improving Liteqube.
 
 ### Changelog
 
@@ -243,3 +264,9 @@ The following improvements can be made to further enhance security, stability an
  - Improved vpn to support OpenVPN, DNS-over-HTTP and on-the-fly connection switch
  - Added mic sharing for audio qube
  - Adjusted memory allocation for Qubes 4.1
+
+21 August 2024, version 0.95:
+ - First release by arkenoi after repository fork
+ - Adjusted for Qubes 4.2
+ - Debian templates migrated to Bookworm (12)
+ - Added smart card support
