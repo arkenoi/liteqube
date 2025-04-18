@@ -38,7 +38,7 @@ push_command "${VM_CORE}" "systemctl enable pcscd.service"
 qvm-service -e ${VM_SC} liteqube-pkcs11
 
 message "CONFIGURING ${YELLOW}dom0"
-#sudo qubes-dom0-update --console --show-output qubes-u2f-dom0
+#sudo qubes-dom0-update --console --show-output -y qubes-u2f-dom0
 push_files "dom0"
 for VM in ${QUBES_SMARTCARD_CLIENTS} ; do
     add_permission "pkcs11" "${VM}" "${VM_SC}" "allow,target=${VM_SC}"

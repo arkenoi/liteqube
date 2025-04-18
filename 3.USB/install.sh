@@ -69,7 +69,7 @@ done
 
 message "CONFIGURING ${YELLOW}dom0"
 push_files "dom0"
-sudo qubes-dom0-update --console --show-output qubes-usb-proxy-dom0
+sudo qubes-dom0-update --console --show-output -y qubes-usb-proxy-dom0
 add_line dom0 "/etc/qubes-rpc/policy/liteqube.Message" "${VM_USB} dom0 allow"
 add_line dom0 "/etc/qubes-rpc/policy/liteqube.Error" "${VM_USB} dom0 allow"
 add_line dom0 "/etc/qubes-rpc/policy/liteqube.SplitXorg" "${VM_USB} ${VM_XORG} allow"
@@ -80,7 +80,7 @@ if [ x"${USB_INPUT_DEVICES}" = x"True" ] ; then
     message "CONFIGURING USB INPUT IN ${YELLOW}${VM_CORE}"
     push_command "${VM_CORE}" "apt-get install -q -y qubes-input-proxy-sender"
     message "CONFIGURING USB INPUT IN ${YELLOW}dom0"
-    sudo qubes-dom0-update --console --show-output qubes-input-proxy
+    sudo qubes-dom0-update --console --show-output -y qubes-input-proxy
 else
     sudo rm -f /etc/qubes-rpc/policy/qubes.Input*
 fi
