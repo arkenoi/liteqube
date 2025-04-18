@@ -54,7 +54,7 @@ add_line dom0 "/etc/qubes-rpc/policy/liteqube.Error" "${VM_XORG} dom0 allow"
 add_line dom0 "/etc/qubes-rpc/policy/liteqube.Error" "${VM_KEYS} dom0 allow"
 add_line dom0 "/etc/qubes-rpc/policy/liteqube.SplitXorg" "${VM_DVM} ${VM_XORG} allow"
 add_line dom0 "/etc/qubes-rpc/policy/liteqube.SplitXorg" "${VM_KEYS} ${VM_XORG} allow"
-[ -x /bin/zenity ] || sudo qubes-dom0-update --console --show-output zenity
+[ -x /bin/zenity ] || sudo qubes-dom0-update --console --show-output -y zenity
 dom0_command lq-xterm
 
 
@@ -115,9 +115,9 @@ qvm-shutdown --quiet --wait --force "${VM_CORE}"
 
 
 message "INSTALLING PARTED AND GDISK TOOLS IN ${YELLOW}dom0"
-[ -x /usr/sbin/parted ] || sudo qubes-dom0-update --console --show-output parted
-[ -x /usr/sbin/gdisk ] || sudo qubes-dom0-update --console --show-output gdisk
-[ -x /usr/sbin/e2fsck ] || sudo qubes-dom0-update --console --show-output e2fsprogs
+[ -x /usr/sbin/parted ] || sudo qubes-dom0-update --console --show-output -y parted
+[ -x /usr/sbin/gdisk ] || sudo qubes-dom0-update --console --show-output -y gdisk
+[ -x /usr/sbin/e2fsck ] || sudo qubes-dom0-update --console --show-output -y e2fsprogs
 
 
 if [ x"${VM_CORE_CREATED}" = x"true" ] ; then

@@ -45,7 +45,7 @@ done
 
 
 message "CONFIGURING ${YELLOW}dom0"
-[ -x /bin/dialog ] || sudo qubes-dom0-update --console --show-output dialog
+[ -x /bin/dialog ] || sudo qubes-dom0-update --console --show-output -y dialog
 add_line dom0 "/etc/qubes-rpc/policy/liteqube.Message" "${VM_DECRYPT} dom0 allow"
 add_line dom0 "/etc/qubes-rpc/policy/liteqube.Error" "${VM_DECRYPT} dom0 allow"
 add_line dom0 "/etc/qubes-rpc/policy/liteqube.SignalStorage" "${VM_DECRYPT} dom0 allow"
