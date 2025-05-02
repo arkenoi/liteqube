@@ -90,7 +90,7 @@ A few installation notes:
 ### Network
 This script will create two firewalls (fw-net and fw-tor, equivalent of sys-firewall), network qube (core-net, equivalent of sys-net), tor qube (core-tor, equivalent of whonix-gw) and a separate qube to handle system updates (core-update).
 
-Two firewall options are offered, linux-based firewall and mirage-firewall, with mirage-firewall installed by default. Two firewalls are created by default: fw-net shields the whole system from core-net and fw-tor shields torified qubes from core-tor. That's extra-secure setup, fw-tor is not strictly necessary and can be deleted, in which case you need to set core-tor as network vm for core-update. Once firewall is set up you can set fw-tor (or core-tor) as net vm for any qube you want to torify.
+Two firewall options are offered, linux-based firewall and mirage-firewall, with the linux-based firewall installed by default (due to [potential performance problems with mirage](https://github.com/mirage/qubes-mirage-firewall/issues/130)). Two firewalls are created by default: fw-net shields the whole system from core-net and fw-tor shields torified qubes from core-tor. That's extra-secure setup, fw-tor is not strictly necessary and can be deleted, in which case you need to set core-tor as network vm for core-update. Once firewall is set up you can set fw-tor (or core-tor) as net vm for any qube you want to torify.
 
 Network qube core-net is disposable by default, it can be switched to normal appvm in the installation script settings. Disposable core-net makes it more secure but also means any new access points will not be saved automatically. You will need to manually add any newly added access points to either debian-core or core-keys, more on this below.
 
