@@ -7,7 +7,7 @@
 
 get_radio_status()
 {
-    WIFI_DEVICE="$(nmcli -t -f type,dbus-path d status | grep ^wifi | cut -d\: -f2 )"
+    WIFI_DEVICE="$(nmcli -t -f type,dbus-path d status | grep ^wifi: | head -1 | cut -d\: -f2 )"
     case "$(nmcli r wifi)" in
         "enabled")
             WIFI_STATE="on"
@@ -20,12 +20,12 @@ get_radio_status()
 
 get_ap_name()
 {
-    WIFI_AP="$(nmcli -t -f state,name c show | grep ^activated | cut -d\: -f2 )"
+    WIFI_AP="$(nmcli -t -f state,name c show | grep ^activated | grep -v :lo | grep -v :vif | cut -d\: -f2 )"
 }
 
 get_ap_status()
 {
-    WIFI_STATUS="$(nmcli -t -f active,state c show | grep ^yes | cut -d\: -f2 )"
+    WIFI_STATUS="$(nmcli -t -f active,state,name c show | grep ^yes | grep ${WIFI_AP}| cut -d\: -f2 )"
     if [ x"${WIFI_STATUS}" = x"activating" ] ; then
         WIFI_STATUS="connecting"
     elif [ x"${WIFI_STATUS}" = x"activated" ] ; then
