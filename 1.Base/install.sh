@@ -2,7 +2,7 @@
 
 
 # Package to install in template vm for text editing
-DEFAULT_EDITOR_PKG="nano"
+DEFAULT_EDITOR_PKG="vim"
 
 
 #########################################################################
@@ -13,7 +13,6 @@ DEFAULT_EDITOR_PKG="nano"
 chmod +x ../.lib/lib.sh
 . ../.lib/lib.sh
 set -e
-
 
 if ! vm_exists "${VM_CORE}" ; then
     if ! vm_exists "${VM_BASE}" ; then
@@ -31,30 +30,21 @@ else
 fi
 
 
-message "CONFIGURING ${YELLOW}${VM_CORE}${PREFIX} (1/2)"
-qvm-prefs --quiet --set "${VM_CORE}" label "${COLOR_TEMPLATE}"
-qvm-prefs --quiet --set "${VM_CORE}" maxmem 0
-qvm-prefs --quiet --set "${VM_CORE}" memory 1024
-qvm-prefs --quiet --set "${VM_CORE}" netvm ''
-qvm-prefs --quiet --set "${VM_CORE}" audiovm ''
-qvm-prefs --quiet --set "${VM_CORE}" vcpus 1
-
+vm_configure ${VM_CORE} 'pvh' 1024 '' ''
 
 message "CONFIGURING ${YELLOW}dom0"
 push_files "dom0"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Message" "${VM_CORE} dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Message" "${VM_CORE}1 dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Message" "${VM_DVM} dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Message" "${VM_XORG} dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Message" "${VM_KEYS} dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Error" "${VM_CORE} dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Error" "${VM_CORE}1 dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Error" "${VM_DVM} dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Error" "${VM_XORG} dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.Error" "${VM_KEYS} dom0 allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.SplitXorg" "${VM_DVM} ${VM_XORG} allow"
-add_line dom0 "/etc/qubes-rpc/policy/liteqube.SplitXorg" "${VM_KEYS} ${VM_XORG} allow"
-[ -x /bin/zenity ] || sudo qubes-dom0-update --console --show-output -y zenity
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Message * ${VM_CORE} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Message * ${VM_DVM} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Message * ${VM_XORG} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Message * ${VM_KEYS} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_CORE} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_DVM} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_XORG} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_KEYS} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.SplitXorg * ${VM_DVM} ${VM_XORG} allow"
+add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_KEYS} ${VM_XORG} allow"
+[ -x /bin/zenity ] || sudo qubes-dom0-update -y --console --show-output zenity
 dom0_command lq-xterm
 
 
@@ -65,6 +55,10 @@ qvm-start --quiet --skip-if-running "${VM_CORE}"
 message "CONFIGURING ${YELLOW}${VM_CORE}${PREFIX} (2/2)"
 push_command "${VM_CORE}" "mount / -o rw,remount"
 push_command "${VM_CORE}" "sh -c \"rm -rf /root/*\""
+#
+# These to are needed to fix strange glitch of 4.3
+push_command "${VM_CORE}" "apt update && apt -y upgrade"
+
 push_files "${VM_CORE}"
 push_command "${VM_CORE}" "usermod -a -G qubes user"
 push_command "${VM_CORE}" "rm -rf /home.orig"
@@ -79,32 +73,21 @@ message "RESTARTING ${YELLOW}${VM_CORE}"
 qvm-shutdown --quiet --wait --force "${VM_CORE}"
 qvm-start --quiet --skip-if-running "${VM_CORE}"
 push_command "${VM_CORE}" "mount / -o rw,remount"
-
+push_command "${VM_CORE}" "apt-get -y install aptitude"
 
 message "FILTERING PACKAGES INSTALLED IN ${YELLOW}${VM_CORE}"
-push_command "${VM_CORE}" "apt-get -q -y update"
-push_command "${VM_CORE}" "apt-get -q -y install aptitude stterm fonts-terminus-otb"
-push_command "${VM_CORE}" "DEBIAN_FRONTEND=noninteractive aptitude -q -y install haveged kmod localepurge parted qubes-vm-dependencies whiptail netcat-openbsd openssh-client ca-certificates x11-utils"
-push_command "${VM_CORE}" "aptitude -q -y unhold '~i'"
-push_command "${VM_CORE}" "aptitude -q -y unmarkauto aptitude haveged kmod localepurge parted qubes-vm-dependencies stterm whiptail fonts-terminus-otb netcat-openbsd ca-certificates x11-utils"
-push_command "${VM_CORE}" "aptitude -q -y markauto '~sadmin !( aptitude | kmod | localepurge | parted | qubes-vm-dependencies )'"
-push_command "${VM_CORE}" "aptitude -q -y install"
-push_command "${VM_CORE}" "aptitude -q -y markauto '~sfonts !( fonts-terminus-otb )'"
-push_command "${VM_CORE}" "aptitude -q -y install"
-push_command "${VM_CORE}" "aptitude -q -y markauto '~smisc !( haveged | ca-certificates )'"
-push_command "${VM_CORE}" "aptitude -q -y install"
-push_command "${VM_CORE}" "aptitude -q -y markauto '~snet !( netcat-openbsd | openssh-client )'"
-push_command "${VM_CORE}" "aptitude -q -y install"
-push_command "${VM_CORE}" "aptitude -q -y markauto '~sutils !( whiptail )'"
-push_command "${VM_CORE}" "aptitude -q -y install"
-push_command "${VM_CORE}" "aptitude -q -y markauto '~sx11 !( stterm | x11-utils )'"
-push_command "${VM_CORE}" "aptitude -q -y install"
-push_command "${VM_CORE}" "aptitude -q -y markauto '( ~seditors | ~sinterpreters | ~slibs | ~slocalization | ~smetapackages | ~sperl | ~sshells | ~stext )'"
-push_command "${VM_CORE}" "aptitude -q -y install"
-push_command "${VM_CORE}" "aptitude -q -y install dbus-user-session ${DEFAULT_EDITOR_PKG}"
+install_packages ${VM_CORE} stterm fonts-terminus-otb haveged kmod localepurge parted qubes-vm-dependencies \
+			     whiptail netcat-openbsd openssh-client ca-certificates x11-utils dbus-user-session \
+			     vim-tiny qubes-core-agent-passwordless-root
+
+push_command "${VM_CORE}" "apt-get -q -y remove apt-utils cpio cron cron-daemon-common debconf-i18n dirmngr eatmydata gnupg gnupg-l10n gpg gpg-agent gpgconf gpgsm ifupdown iputils-ping less libassuan9:amd64 libbpf1:amd64 libcap2-bin libeatmydata1:amd64 libencode-locale-perl libfdisk1:amd64 libfile-basedir-perl libfile-desktopentry-perl libfile-mimeinfo-perl libgcrypt20:amd64 libgnutls30t64:amd64 libgpg-error0:amd64 libidn2-0:amd64 libipc-system-simple-perl libjansson4:amd64 libksba8:amd64 libldap2:amd64 libmnl0:amd64 libnftables1:amd64 libnftnl11:amd64 libnpth0t64:amd64 libp11-kit0:amd64 libsasl2-2:amd64 libsasl2-modules-db:amd64 libtasn1-6:amd64 libtext-iconv-perl:amd64 libtirpc-common libtirpc3t64:amd64 liburi-perl libutempter0:amd64 libxtables12:amd64 logrotate nano pinentry-curses tasksel tasksel-data vim-tiny xbitmaps"
+
+install_packages ${VM_CORE} ${DEFAULT_EDITOR_PKG}
+# x11-server-utils depend on this, but we can still remove
+push_command "${VM_CORE}" "apt-mark hold cpp cpp-14 cpp-x86-64-linux-gnu cpp-14-x86-64-linux-gnu"
+push_command "${VM_CORE}" "dpkg -r --force-depends cpp cpp-14 cpp-x86-64-linux-gnu cpp-14-x86-64-linux-gnu"
 push_command "${VM_CORE}" "aptitude -q -y purge dbus-x11"
 push_command "${VM_CORE}" "aptitude -q -y full-upgrade"
-
 
 message "ENABLING TEMPLATING SERVICE IN ${YELLOW}${VM_CORE}"
 push_command "${VM_CORE}" "systemctl enable liteqube-vm-template >/dev/null 2>&1" >/dev/null 2>&1
@@ -115,32 +98,30 @@ qvm-shutdown --quiet --wait --force "${VM_CORE}"
 
 
 message "INSTALLING PARTED AND GDISK TOOLS IN ${YELLOW}dom0"
-[ -x /usr/sbin/parted ] || sudo qubes-dom0-update --console --show-output -y parted
-[ -x /usr/sbin/gdisk ] || sudo qubes-dom0-update --console --show-output -y gdisk
-[ -x /usr/sbin/e2fsck ] || sudo qubes-dom0-update --console --show-output -y e2fsprogs
+[ -x /usr/sbin/parted ] || sudo qubes-dom0-update -y --console --show-output parted
+[ -x /usr/sbin/gdisk ] || sudo qubes-dom0-update -y --console --show-output gdisk
+[ -x /usr/sbin/e2fsck ] || sudo qubes-dom0-update -y --console --show-output e2fsprogs
 
 
-if [ x"${VM_CORE_CREATED}" = x"true" ] ; then
+VM_LVM="${VM_CORE//-/--}"
 
-    message "RESIZING PRIVATE FILESYSTEM OF ${YELLOW}${VM_CORE}"
-    VM_LVM="${VM_CORE//-/--}"
-    sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--private"
-    sudo resize2fs "/dev/mapper/${VM_GROUP}--${VM_LVM}--private" $(( ${PRIVATE_DISK_MB}-200 ))M
-    sudo lvresize -y -f "/dev/mapper/${VM_GROUP}--${VM_LVM}--private" -L ${PRIVATE_DISK_MB}M || true
-
-
-    message "RESIZING ROOT FILESYSTEM OF ${YELLOW}${VM_CORE}"
-    VM_LVM="${VM_CORE//-/--}"
-    sudo kpartx -a "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
-    sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3"
-    sudo resize2fs "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3" $(( ${ROOT_DISK_MB}-700 ))M
-    sudo kpartx -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
-    sudo parted "/dev/mapper/${VM_GROUP}--${VM_LVM}--root" resizepart 3 $(( ${ROOT_DISK_MB}-300 ))M
-    echo "y" | sudo lvresize -y -f "/dev/mapper/${VM_GROUP}--${VM_LVM}--root" -L ${ROOT_DISK_MB}M || true
-    echo -e "e\nr\ne\nY\nw\nY" | sudo gdisk "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
-    sudo kpartx -a "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
-    sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3"
-    sudo kpartx -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+if [ x"${VM_CORE_CREATED}" = x"true" && -e "/dev/mapper/${VM_GROUP}--${VM_LVM}--root" ] ; then
+    vm_resize_private ${VM_CORE} ${PRIVATE_DISK_MB}
+    if [ x"${ROOT_DISK_MB}" != x"" && x"${ROOT_DISK_MB}" != x"0" ] ; then
+       message "RESIZING ROOT FILESYSTEM OF ${YELLOW}${VM_CORE}"
+       sudo kpartx -a "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+       sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3"
+       sudo resize2fs "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3" $(( ${ROOT_DISK_MB}-700 ))M
+       sudo kpartx -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+       size_sect=$(( ((ROOT_DISK_MB - 300) * 1024 * 1024) / 512))
+       start=$(sudo sfdisk -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"|tail -1|grep -oP 'start=\s*\K[0-9]+')
+       echo "$start,$size_sect"|sudo sfdisk --no-reread -N 3 "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+       echo "y" | sudo lvresize -y -f "/dev/mapper/${VM_GROUP}--${VM_LVM}--root" -L ${ROOT_DISK_MB}M || true
+       sudo sgdisk -e "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+       sudo kpartx -a "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+       sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3"
+       sudo kpartx -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+    fi
 
 fi
 
@@ -163,26 +144,14 @@ else
     VM_DVM_CREATED="false"
 fi
 
-
-message "CONFIGURING ${YELLOW}${VM_DVM}"
-qvm-prefs --quiet --set "${VM_DVM}" maxmem 0
-qvm-prefs --quiet --set "${VM_DVM}" memory 512
-qvm-prefs --quiet --set "${VM_DVM}" netvm ''
-qvm-prefs --quiet --set "${VM_DVM}" audiovm ''
-qvm-prefs --quiet --set "${VM_DVM}" vcpus 1
+vm_configure ${VM_CORE} 'pvh' 512 '' ''
 qvm-prefs --quiet "${VM_DVM}" template_for_dispvms True
 qvm-start --quiet --skip-if-running "${VM_DVM}" || true
 
 
 if [ x"${VM_DVM_CREATED}" = x"true" ] ; then
 
-    message "RESIZING PRIVATE FILESYSTEM OF ${YELLOW}${VM_DVM}"
-    qvm-start --quiet --skip-if-running "${VM_DVM}"
-    qvm-shutdown --quiet --wait --force "${VM_DVM}"
-    VM_LVM="${VM_DVM//-/--}"
-    sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--private"
-    sudo resize2fs "/dev/mapper/${VM_GROUP}--${VM_LVM}--private" $(( ${PRIVATE_DISK_MB}-200 ))M
-    sudo lvresize -f "/dev/mapper/${VM_GROUP}--${VM_LVM}--private" -L ${PRIVATE_DISK_MB}M || true
+    vm_resize_private ${VM_DVM} ${PRIVATE_DISK_MB}
     qvm-start --quiet --skip-if-running "${VM_DVM}" || true
 
 fi
@@ -195,14 +164,7 @@ else
     message "VM ${YELLOW}${VM_XORG}${PREFIX} ALREADY EXISTS"
 fi
 
-
-message "CONFIGURING ${YELLOW}${VM_XORG}"
-qvm-prefs --quiet --set "${VM_XORG}" maxmem 0
-qvm-prefs --quiet --set "${VM_XORG}" memory 512
-qvm-prefs --quiet --set "${VM_XORG}" netvm ''
-qvm-prefs --quiet --set "${VM_XORG}" audiovm ''
-qvm-prefs --quiet --set "${VM_XORG}" vcpus 1
-
+vm_configure ${VM_XORG} 'pvh' 512 '' ''
 
 if ! vm_exists "${VM_KEYS}" ; then
     message "CREATING ${YELLOW}${VM_KEYS}"
@@ -214,13 +176,7 @@ else
 fi
 
 
-message "CONFIGURING ${YELLOW}${VM_KEYS}"
-qvm-prefs --quiet --set "${VM_KEYS}" maxmem 0
-qvm-prefs --quiet --set "${VM_KEYS}" memory 160
-qvm-prefs --quiet --set "${VM_KEYS}" netvm ''
-#qvm-prefs --quiet --set "${VM_KEYS}" guivm ''
-qvm-prefs --quiet --set "${VM_KEYS}" audiovm ''
-qvm-prefs --quiet --set "${VM_KEYS}" vcpus 1
+vm_configure ${VM_KEYS} 'pvh' 160 '' ''
 qvm-start --quiet --skip-if-running "${VM_KEYS}"
 sleep 3
 push_command "${VM_KEYS}" "rm -rf /rw/QUARANTINE"
@@ -228,13 +184,7 @@ qvm-shutdown --quiet --wait --force "${VM_KEYS}"
 
 if [ x"${VM_KEYS_CREATED}" = x"true" ] ; then
 
-    message "RESIZING PRIVATE FILESYSTEM OF ${YELLOW}${VM_KEYS}"
-    qvm-start --quiet --skip-if-running "${VM_KEYS}"
-    qvm-shutdown --quiet --wait --force "${VM_KEYS}"
-    VM_LVM="${VM_KEYS//-/--}"
-    sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--private"
-    sudo resize2fs "/dev/mapper/${VM_GROUP}--${VM_LVM}--private" $(( ${PRIVATE_DISK_MB}-200 ))M
-    sudo lvresize -f "/dev/mapper/${VM_GROUP}--${VM_LVM}--private" -L ${PRIVATE_DISK_MB}M || true
+    vm_resize_private ${VM_KEYS} ${PRIVATE_DISK_MB}
 
 fi
 
