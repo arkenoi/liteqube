@@ -107,9 +107,4 @@ lrwxrwxrwx	root	root	./debian-core/var/log/xen
 -rwxr-xr-x	root	root	./dom0/etc/qubes-rpc/liteqube.Error
 -rwxr-xr-x	root	root	./dom0/etc/qubes-rpc/liteqube.Message
 -rwxr-xr-x	root	root	./dom0/etc/qubes-rpc/liteqube.SplitPassword
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.SplitPassword
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.Error
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.Message
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.SplitFile
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.SplitSSH
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.SplitXorg
+-rw-r--r--	root	root	./dom0/etc/qubes/policy.d/50-liteqube.policy
