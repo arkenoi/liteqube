@@ -3,10 +3,10 @@
 # COMMON SETTINGS #
 ###################
 
-# Root partidion size of template vm in Mb
+# Root partidion size of template vm in Mb, unset for no resize
 ROOT_DISK_MB=4096
 
-# Private partition size of template and dvm template vms
+# Private partition size of template and dvm template vms, unset for no resize
 PRIVATE_DISK_MB=1024
 
 # Name os the LVM volume group that holds vm data
@@ -16,12 +16,13 @@ VM_GROUP="qubes_dom0-vm"
 # VM NAMES & COLORS #
 #####################
 
-VM_BASE="debian-12-minimal"
+VM_BASE="debian-13-minimal"
 VM_CORE="debian-core"
 VM_DVM="core-dvm"
 VM_XORG="core-xorg"
 VM_KEYS="core-keys"
 VM_USB="core-usb"
+VM_SC="core-usb"
 VM_NET="core-net"
 VM_TOR="core-tor"
 VM_VPN="core-vpn"
@@ -104,23 +105,35 @@ vm_configure()
     #qvm-prefs --quiet --set "${_VM}" guivm "${5}"
     qvm-prefs --quiet --set "${_VM}" audiovm ''
     qvm-prefs --quiet --set "${_VM}" vcpus 1
+    qvm-features "${_VM}" servicevm 1
 }
 
 vm_resize_private()
 {
     _VRP_VM="${1}"
     _VRP_SIZE="${2}"
-    _VRP_POOL="$(qvm-volume info "${_VRP_VM}:private" | grep '^pool ' | cut -c20-)"
-    _VRP_DRIVER="$(qvm-pool info "${_VRP_POOL}" | grep '^driver ' | cut -c20-)"
+    if [[ -z "${_VRP_SIZE}" || "${_VRP_SIZE}" -eq 0 ]] ; then
+	message "RESIZE SKIPPED"
+	return
+    fi
+    _VRP_POOL="$(qvm-volume info "${_VRP_VM}:private" | grep '^pool ' | awk '{print $2}')"
+    _VRP_DRIVER="$(qvm-pool info "${_VRP_POOL}" | grep '^driver ' | awk '{print $2}')"
 
     if [ x"${_VRP_DRIVER}" = x"lvm_thin" ] ; then
         message "RESIZING PRIVATE FILESYSTEM OF ${YELLOW}${_VRP_VM}"
         _VRP_PREFIX="$(qvm-volume info ${_VRP_VM}:private | grep ^vid | cut -c20- | cut -d/ -f1)"
-        _VM_LVM="${_VRP_PREFIX}-${_VRP_POOL}--${_VRP_VM//-/--}--private"
-        qvm-shutdown --quiet --wait --force "${_VRP_VM}"
-        sudo e2fsck -fy "/dev/mapper/${_VRP_VM}"
-        sudo resize2fs "/dev/mapper/${_VRP_VM}" $(( ${_VRP_SIZE}-200 ))M
-        sudo lvresize -y -f "/dev/mapper/${_VRP_VM}" -L ${_VRP_SIZE}M || true
+	_VM_LVM="${_VRP_VM//-/--}"
+	if [[ -e "/dev/mapper/${VM_GROUP}--${_VM_LVM}--private" ]] ; then
+            qvm-shutdown --quiet --wait --force "${_VRP_VM}"
+            sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${_VM_LVM}--private"
+            sudo resize2fs "/dev/mapper/${VM_GROUP}--${_VM_LVM}--private" $(( ${_VRP_SIZE}-200 ))M
+            sudo lvresize -y -f "/dev/mapper/${VM_GROUP}--${_VM_LVM}--private" -L ${_VRP_SIZE}M || true
+	else
+	    message "VOLUME NOT FOUND"
+	fi
+    else
+	message "RESIZE SKIPPED, UNKNOWN DRIVER ${_VRP_DRIVER}"
+	return
     fi
 }
 
@@ -137,6 +150,12 @@ push_command()
 {
     qvm-start --quiet --skip-if-running "${1}"
     qrexec-client -d "${1}" root:"${2}"
+}
+
+push_command_user()
+{
+    qvm-start --quiet --skip-if-running "${1}"
+    qrexec-client -d "${1}" user:"${2}"
 }
 
 push_xterm()
@@ -299,19 +318,44 @@ checksum_to_vm()
     push_command "${VM_CORE}" "mkdir -p -m 700 /etc/protect/checksum.${_VM}$(dirname ${_REMOTEFILE}) ; rm -f \"/etc/protect/checksum.${_VM}${_REMOTEFILE}\" ; echo -e \"${_SHA256}\n${_SHA512}\" > \"/etc/protect/checksum.${_VM}${_REMOTEFILE}\""
 }
 
+dom0_download()
+{
+    _URL="${1}"
+    _DEST="${2}"
+    _SHA256URL="{$3}"
+    if ! vm_exists "${VM_UPDATE}" ; then 
+        message "${VM_UPDATE} does not exist yet, making a temporary one"
+        _UPDATE_AUTOREMOVE="True"
+	# Not using vm_create because dvm template may lack networking configuration at this point
+        qvm-create --class DispVM --label "${COLOR_WORKERS}" "${VM_UPDATE}"
+    fi
+
+    # TODO: implement SHA256 check
+    TMPFILE=`push_command_user "${VM_UPDATE}" "mktemp"` 
+    push_command_user "${VM_UPDATE}" "curl -L -o ${TMPFILE} ${_URL}" 
+    push_command_user "${VM_UPDATE}" "cat ${TMPFILE}" > "${_DEST}"
+
+    if [ x"${_UPDATE_AUTOREMOVE}" = x"True" ] ; then
+        message "${VM_UPDATE} cleaning up"
+        qvm-shutdown --wait "${VM_UPDATE}"
+        qvm-remove --force "${VM_UPDATE}"
+    fi
+}
+
 install_packages()
 {
     _VM="${1}"
 
     shift
+    # TODO: skip already installed in dom0
     if [ x"${_VM}" = x"dom0" ] ; then
-        echo "NOT IMPLEMENTED"
+	qubes_dom0_update -y --console --no-gui $@
     else
         qvm-start --quiet --skip-if-running "${_VM}"
         for _PACKAGE in $@ ; do
             qrexec-client -d "${_VM}" root:"[ -e /var/lib/dpkg/info/${_PACKAGE}.list ]" || _PACKAGES_TO_INSTALL="${_PACKAGES_TO_INSTALL} ${_PACKAGE}"
         done
-        [ -z "${_PACKAGES_TO_INSTALL}" ] || qrexec-client -d "${_VM}" root:"aptitude -q -y install ${_PACKAGES_TO_INSTALL}"
+        [ -z "${_PACKAGES_TO_INSTALL}" ] || qrexec-client -d "${_VM}" root:"apt -q -y install ${_PACKAGES_TO_INSTALL}"
     fi
 }
 
@@ -321,11 +365,7 @@ add_permission()
     _ADP_VM_FROM="${2}"
     _ADP_VM_TO="${3}"
     _ADP_PERMISSION="${4}"
-    if [ -e "/etc/qubes-rpc/${_ADP_PERMISSION_NAME}" ] ; then
-        add_line dom0 "/etc/qubes-rpc/policy/${_ADP_PERMISSION_NAME}" "${_ADP_VM_FROM} ${_ADP_VM_TO} ${_ADP_PERMISSION}"
-    else
-        add_line dom0 "/etc/qubes-rpc/policy/liteqube.${_ADP_PERMISSION_NAME}" "${_ADP_VM_FROM} ${_ADP_VM_TO} ${_ADP_PERMISSION}"
-    fi
+    add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.${_ADP_PERMISSION_NAME} * ${_ADP_VM_FROM} ${_ADP_VM_TO} ${_ADP_PERMISSION}"
 }
 
 vm_find_template()
