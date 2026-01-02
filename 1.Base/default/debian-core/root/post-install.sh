@@ -18,6 +18,7 @@ IFS="${OLD_IFS}"
 for SERVICE in "cron.service" "qubes-mminfo-writer.service" "remote-fs.service" "systemd-timesyncd.service" "systemd-fsck-root.service" "systemd-jornal-flush.service" "systemd-update-umtp.service" "systemd-tmpfiles-clean.service" "dev-xvdc1-swap.service" "systemd-update-umtp-runlevel.service" "systemd-rfkill.service" "htpdate.service" ; do
     [ -e "/etc/systemd/system/${SERVICE}" ] || systemctl mask "${SERVICE}" 2>/dev/null
 done
+systemctl enable qubes-bind-dirs 2>/dev/null
 
 IFS="${NEWLINE}"
 for TIMER in $(systemctl list-units | grep '\.timer' | cut -d' ' -f3 | grep -v "qubes-sync-time.timer") ; do
@@ -54,5 +55,4 @@ if [ -e /lib/systemd/system/NetworkManager.service.d/30_qubes.conf ] ; then
 fi
 
 fstrim --quiet /
-
 exit 0
