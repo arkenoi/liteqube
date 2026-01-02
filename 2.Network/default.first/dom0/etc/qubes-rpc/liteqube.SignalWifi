@@ -31,14 +31,14 @@ case ${1:0:2} in
         fi
         ;;
     "AP")
-        sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} dbus-send --dest=org.awesomewm.awful --type=method_call --print-reply / org.awesomewm.awful.Remote.Eval string:\"wifi_state('AccessPoint', '${1:3}')\"" 1>/dev/null 2>&1
+        sudo -u "#1000" /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} dbus-send --dest=org.awesomewm.awful --type=method_call --print-reply / org.awesomewm.awful.Remote.Eval string:\"wifi_state('AccessPoint', '${1:3}')\"" 1>/dev/null 2>&1
         if [ x"${SEND_MESSAGE}" = x"True" ] && ! [ x"" = x"${1:3}" ] ; then
             #sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"Connected to ${1:3}\"" >/dev/null 2>&1
             sudo -u "#1000" /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"Connected to ${1:3}\"" >/dev/null 2>&1
         fi
         ;;
     "SI")
-#        sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} dbus-send --dest=org.awesomewm.awful --type=method_call --print-reply / org.awesomewm.awful.Remote.Eval string:\"wifi_state('Signal', ${1:3})\"" 1>/dev/null 2>&1
+#        sudo -u "#1000" /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} dbus-send --dest=org.awesomewm.awful --type=method_call --print-reply / org.awesomewm.awful.Remote.Eval string:\"wifi_state('Signal', ${1:3})\"" 1>/dev/null 2>&1
         ;;
 esac
 
