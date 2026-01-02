@@ -5,6 +5,7 @@ if -x /lib/systemd/systemd-fsck ; then
 fi
 
 /bin/mount / -o rw,remount
+systemctl enable qubes-bind-dirs
 /usr/lib/qubes/init/resize-rootfs-if-needed.sh &
 
 if [ -e /lib/systemd/system/NetworkManager.service.d/30_qubes.conf ] ; then
