@@ -11,11 +11,13 @@ echo "nameserver ${NS1}${RETURN}nameserver ${NS2}" > /run/resolv.conf
 
 /sbin/fstrim --quiet /rw
 
-/bin/systemctl enable qubes-iptables
-/bin/systemctl start qubes-iptables
+systemctl start qubes-iptables
+systemctl restart qubes-network-uplink@eth0
+systemctl restart tor
+nft flush table qubes
+systemctl restart qubes-firewall
 
-. /rw/config/qubes-firewall-user-script
-
+echo 1 >/proc/sys/net/ipv4/ip_forward
 /bin/systemctl enable liteqube-tor-monitor
 /bin/systemctl start liteqube-tor-monitor
 
