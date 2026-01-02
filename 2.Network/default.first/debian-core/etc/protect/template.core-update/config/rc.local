@@ -12,15 +12,15 @@ echo "nameserver ${NS1}${RETURN}nameserver ${NS2}" > /run/resolv.conf
 /bin/mount /var/tmp -o remount,size=90%
 /bin/mount -t tmpfs tmpfs /var/lib/qubes/dom0-updates -o rw,nosuid,nodev,noexec,noatime,inode64,size=90%
 
-/bin/systemctl enable qubes-iptables
+#/bin/systemctl enable qubes-iptables
 /bin/systemctl start qubes-iptables
 
-/bin/systemctl enable qubes-firewall
+#/bin/systemctl enable qubes-firewall
 /bin/systemctl start qubes-firewall
 
 touch /var/run/qubes-service/qubes-updates-proxy
-/bin/systemctl enable qubes-updates-proxy
+#/bin/systemctl enable qubes-updates-proxy
 /bin/systemctl start qubes-updates-proxy
 
-/bin/systemctl enable liteqube-shutdown-inactive
+#/bin/systemctl enable liteqube-shutdown-inactive
 /bin/systemctl start liteqube-shutdown-inactive
