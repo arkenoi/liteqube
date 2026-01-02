@@ -1,27 +1,66 @@
-#!/bin/sh
+#!/bin/bash
+# Dynamic qubes-firewall-user-script for transparent Tor proxy on core-tor
+# Uses current eth0 IP and Tor DNSPort 5300; counters only, no logging
 
-iptables -t nat -D PREROUTING -j PR-QBS
-iptables -t nat -A PREROUTING -i vif+ -p tcp -m tcp --dport 9050 -j REDIRECT --to-ports 9050
-iptables -t nat -A PREROUTING -i vif+ -p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN -j REDIRECT --to-ports 9040
-iptables -t nat -A PREROUTING -i vif+ -p udp -m udp --dport 53 -j REDIRECT --to-ports 5300
+set -eu
 
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-iptables -t nat -A OUTPUT -m owner --gid-owner debian-tor -j RETURN
-iptables -t nat -A OUTPUT -p udp -m udp --dport 53 -j REDIRECT --to-ports 5300
-iptables -t nat -A OUTPUT -d 127.0.0.0/9 -j RETURN
-iptables -t nat -A OUTPUT -p tcp -j REDIRECT --to-ports 9040
+CORE_TOR_IP="$(ip -4 addr show eth0 | awk '/inet / {print $2}' | cut -d/ -f1)"
+TOR_GID="$(id -g debian-tor)"
+if [[ -z "$CORE_TOR_IP" ]]; then
+    echo "Could not determine core-tor IP address on eth0!" >&2
+    exit 1
+fi
 
-iptables -I INPUT -i vif+ -p udp -m udp --dport 5300 -j ACCEPT
-iptables -I INPUT -i vif+ -p tcp -m tcp --dport 9040 -j ACCEPT
-iptables -I INPUT -i vif+ -p tcp -m tcp --dport 9050 -j ACCEPT
-iptables -I INPUT -m state --state INVALID -j DROP
-iptables -I INPUT -m conntrack --ctstate INVALID -j DROP
-iptables -I INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,ACK -j DROP
-iptables -I INPUT -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -j DROP
-iptables -I INPUT -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -j DROP
-iptables -I INPUT -f -j DROP
-iptables -I INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG -j DROP
-iptables -I INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
-iptables -I INPUT -p icmp -j DROP
+add_rule_if_not_exists() {
+  chain="$1"
+  rule="$2"
+  nft list chain ip qubes "$chain" | grep -qF "$rule" || nft add rule ip qubes "$chain" "$rule"
+}
 
-iptables -I FORWARD -j REJECT --reject-with icmp-admin-prohibited
+insert_rule_if_not_exists() {
+  chain="$1"
+  rule="$2"
+  nft list chain ip qubes "$chain" | grep -qF "$rule" || nft insert rule ip qubes "$chain" "$rule"
+}
+
+# Create client-dnat chain if not exists
+nft list chain ip qubes client-dnat >/dev/null 2>&1 || nft add chain ip qubes client-dnat { type nat hook prerouting priority -150 \; policy accept \; }
+
+# Add redirect rules with dynamic IP address and DNS port 5300
+add_rule_if_not_exists client-dnat "iifname \"vif*\" meta mark 0x00000001 meta l4proto 6 ip daddr != { 127.0.0.0/8, ${CORE_TOR_IP}/32, 10.138.0.0/16 } redirect to :9040"
+add_rule_if_not_exists client-dnat "iifname \"vif*\" meta l4proto 17 udp dport 53 redirect to :5300"
+
+# Insert input accepts early (with counter, no log)
+insert_rule_if_not_exists input 'ct state { established, related } counter accept'
+insert_rule_if_not_exists input "iifname \"vif*\" udp dport 5300 counter accept"
+insert_rule_if_not_exists input "iifname \"vif*\" tcp dport 9040 counter accept"
+insert_rule_if_not_exists input "iifname \"vif*\" tcp dport 9050 counter accept"
+insert_rule_if_not_exists input "iifname \"lo\" counter accept"
+
+# Add postrouting masquerade (with counter)
+add_rule_if_not_exists postrouting 'oifname "eth0" counter masquerade'
+
+# Add forward fixes
+add_rule_if_not_exists custom-forward 'meta mark 0x00000001 counter accept'
+add_rule_if_not_exists forward 'iifname "vif*" oifname "eth0" counter accept'
+add_rule_if_not_exists forward 'ct state { established, related } counter accept'
+
+# Add missing prerouting rules
+add_rule_if_not_exists prerouting 'iifname "vif*" meta l4proto 6 meta mark set 0x00000001 counter accept'
+add_rule_if_not_exists prerouting 'ct state { established, related } counter accept'
+
+# Create local-output chain if not exists
+nft list chain ip qubes local-output >/dev/null 2>&1 || nft add chain ip qubes local-output { type nat hook output priority -100 \; policy accept \; }
+
+# Use current core-tor IP for returns/exclusions and DNS port 5300
+add_rule_if_not_exists local-output "meta skgid ${TOR_GID} counter return"
+add_rule_if_not_exists local-output 'ip daddr 127.0.0.0/9 counter return'
+add_rule_if_not_exists local-output "ip daddr ${CORE_TOR_IP} counter return"
+add_rule_if_not_exists local-output 'tcp flags syn counter redirect to 9040'
+add_rule_if_not_exists local-output 'udp dport 53 counter redirect to 5300'
+
+# Optional: Update sets if needed
+# nft add element ip qubes downstream { 10.138.28.130 }
+# nft add element ip qubes allowed { "vif211.0" . 10.138.28.130 }
+
+exit 0
