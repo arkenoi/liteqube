@@ -10,5 +10,5 @@ APT::AutoRemove "";
 APT::AutoRemove::RecommendsImportant "false";
 APT::AutoRemove::SuggestsImportant "false";
 APT::Acquire::Retries "5";
-DPkg::Post-Invoke {"/root/post-install.sh";};
+DPkg::Post-Invoke { "/root/post-install.sh";};
 
