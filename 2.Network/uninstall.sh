@@ -5,8 +5,8 @@ chmod +x ../.lib/lib.sh
 SYS_NET="sys-net"
 SYS_FIREWALL="sys-firewall"
 
-sudo nano /etc/yum.repos.d/qubes-dom0.repo
-sudo nano /etc/yum.repos.d/qubes-templates.repo
+sudo cp ./qubes-dom0.repo /etc/yum.repos.d
+#sudo vi /etc/yum.repos.d/qubes-templates.repo
 
 qvm-shutdown --quiet --wait --force "${VM_UPDATE}"
 qvm-shutdown --quiet --wait --force "${VM_FW_TOR}"
