@@ -1,2 +1,0 @@
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.pkcs11
--rwxr-xr-x	root	root	./debian-core/etc/qubes-rpc/liteqube.pkcs11
