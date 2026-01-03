@@ -12,5 +12,6 @@ drwxrwxr-x	root	root	./debian-core/etc/usbguard
 -rwxr-xr-x	root	root	./debian-core/etc/qubes-rpc/liteqube.StorageConfig
 drw-r--r--	root	root	./debian-core/etc/udev/rules.d/99-liteqube-amount.rules
 -rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-amount@.service
+-rw-r--r--	root	root	./debian-core/lib/systemd/system/pcscd.service.d/30_qubes.conf
 -rwxr-xr-x	root	root	./dom0/etc/qubes-rpc/liteqube.SignalStorage
 -rwxr-xr-x	root	root	./debian-core/etc/qubes-rpc/liteqube.pkcs11
