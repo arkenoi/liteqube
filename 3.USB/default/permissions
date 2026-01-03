@@ -13,7 +13,4 @@ drwxrwxr-x	root	root	./debian-core/etc/usbguard
 drw-r--r--	root	root	./debian-core/etc/udev/rules.d/99-liteqube-amount.rules
 -rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-amount@.service
 -rwxr-xr-x	root	root	./dom0/etc/qubes-rpc/liteqube.SignalStorage
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.SignalStorage
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/qubes.InputKeyboard
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/qubes.InputMouse
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/qubes.InputTablet
+-rwxr-xr-x	root	root	./debian-core/etc/qubes-rpc/liteqube.pkcs11
