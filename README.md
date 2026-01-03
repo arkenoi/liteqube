@@ -1,4 +1,4 @@
-a Liteqube puts Qubes OS on a diet
+# Liteqube puts Qubes OS on a diet
 
 Copyright (C) 2017-2023 Alex Barinov 2023-2025 Alex Smirnoff
  
@@ -8,7 +8,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
  
 You should have received a copy of the GNU General Public License along with this program.  If not, see [here](https://www.gnu.org/licenses/).
 
-TL;DR: more minimal than "normal minimal" debian templates, lightweight service qubes (net, tor, usb, possibly audio), readonly root, 
+*TL;DR*: more minimal than "normal minimal" debian templates, lightweight service qubes (net, tor, usb, possibly audio), readonly root, 
 fllesystem control, the rest is optional. Also you may reduce networking qube further if your network is wired-only.
 If you have USB audio, install 7.Audio also, but it was significantly less tested.
 Downsides: you will lose most of the fancy widgets, including the volume control and network icon. I will do my best to bring it back soon.
@@ -112,9 +112,10 @@ During the installation, your dom0 update source will be changed to onion Qubes 
 If core net crashes or hangs on start (can happen if your network drivers require more memoty than intel's), try increasing memory allocated to 'core-net' from 208Mb to something bigger.
 
 ### USB
-This will create core-usb disposable qube and assign all sys-usb devises to it. [Usbguard](https://usbguard.github.io/) is deployed by default and is configured to only accept usb disks. To allow other device types (input devices, usb hubs, cameras, etc) you will need to tweak `/etc/usbguard/rules.conf` in debian-core.
+This will create core-usb disposable qube and assign all sys-usb devises to it. [Usbguard](https://usbguard.github.io/) is deployed by default in permissive mode. 
+To configure it more restrictively you will need to tweak `/etc/usbguard/rules.conf` in debian-core.
 
-If USB_INPUT_DEVICES is set to True in the installation script (it is by default) then `/etc/qubes-rpc/qubes.Input*` files will be installed, allowing dom0 input to come from USB devices. This is a security risk, you've been warned.
+If USB_INPUT_DEVICES is set to True in the installation script (it is by default) then input device policy (/etc/qubes/policy.d/50-config-input.policy) will be installed, allowing dom0 input to come from USB devices. This is a security risk, you've been warned.
 
 ### VPN
 The intent is to create a fire-and-forget qube that connects to VPN server once started and routes and acts as netvm for any connected qubes, routing all traffic through VPN. There are 3 vpn types currently supported:
@@ -345,7 +346,7 @@ The following improvements can be made to further enhance security, stability an
  - Debian templates migrated to Bookworm (12)
  - Added smart card support
 
-27 December 2025, version 0.07:
+27 December 2025, version 0.97:
  - Adjust for Qubes 4.3
  - Debian templates migrated to Trixie (13)
  - Mirage is back by default
