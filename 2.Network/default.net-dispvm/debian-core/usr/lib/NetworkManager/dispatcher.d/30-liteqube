@@ -1,0 +1,12 @@
+#!/usr/bin/sh
+if [ "$2" = up ]; then
+	INET=$(/sbin/ip addr show dev "$1" | /bin/grep inet)
+	/usr/lib/qubes/qubes-setup-dnat-to-ns
+	qubesdb-write /qubes-netvm-external-ip "$INET"
+fi
+if [ "$2" = down ]; then
+	qubesdb-write /qubes-netvm-external-ip ""
+fi
+if [ "$2" = "dns-change" ]; then
+	/usr/lib/qubes/qubes-setup-dnat-to-ns
+fi

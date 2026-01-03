@@ -5,30 +5,43 @@ while ! ps -A | grep qrexec-agent >/dev/null 2>&1 ; do
 done
 sleep 1
 
-mkdir -p -m 700 /run/liteqube
-qrexec-client-vm core-keys liteqube.SplitFile+secret_key > /run/liteqube/secret_key
-chmod 600 /run/liteqube/secret_key
-
-for LINK in /etc/NetworkManager/system-connections/* ; do
-    [ -L "${LINK}" ] || continue
-    qrexec-client-vm core-keys "liteqube.SplitFile+$(basename ${LINK//[. ]/_})" > "/run/liteqube/$(basename "${LINK}")"
-    chmod 600 "/run/liteqube/$(basename "${LINK}")"
-done
-
-/bin/rm /run/resolv.conf
-/bin/ln -s /run/NetworkManager/resolv.conf /run/resolv.conf
-
-/bin/systemctl enable qubes-iptables
+#/bin/systemctl enable qubes-iptables
 /bin/systemctl start qubes-iptables
-
-/bin/systemctl enable qubes-network
+#/bin/systemctl enable qubes-network
 /bin/systemctl start qubes-network
 
-/bin/systemctl enable NetworkManager
-/bin/systemctl start NetworkManager
+if [ -e "/etc/NetworkManager/NetworkManager.conf" ]; then
+	mkdir -p -m 700 /run/liteqube
+	qrexec-client-vm core-keys liteqube.SplitFile+secret_key > /run/liteqube/secret_key
+	chmod 600 /run/liteqube/secret_key
 
-/bin/systemctl enable liteqube-wifi-monitor-state
-/bin/systemctl start liteqube-wifi-monitor-state
+	for LINK in /etc/NetworkManager/system-connections/* ; do
+	    [ -L "${LINK}" ] || continue
+	    qrexec-client-vm core-keys "liteqube.SplitFile+$(basename ${LINK//[. ]/_})" > "/run/liteqube/$(basename "${LINK}")"
+	    chmod 600 "/run/liteqube/$(basename "${LINK}")"
+	done
+	/bin/rm /run/resolv.conf
+	/bin/ln -s /run/NetworkManager/resolv.conf /run/resolv.conf
+#	/bin/systemctl enable NetworkManager
+	/bin/systemctl start NetworkManager
+#	/bin/systemctl enable liteqube-wifi-monitor-state
+	/bin/systemctl start liteqube-wifi-monitor-state
 
-/bin/systemctl enable liteqube-wifi-monitor-signal
-/bin/systemctl start liteqube-wifi-monitor-signal
+#	/bin/systemctl enable liteqube-wifi-monitor-signal
+	/bin/systemctl start liteqube-wifi-monitor-signal
+	/bin/systemctl restart qubes-network
+else
+	mkdir -p /run/interfaces.d
+	for iface in $(ls /sys/class/net | grep -E '^(eth|ens)'); do
+		echo "auto $iface" >/run/interfaces.d/$iface
+		echo "iface $iface inet dhcp" >>/run/interfaces.d/$iface
+		echo "	up /usr/bin/qrexec-client-vm -tT core-tor liteqube.TorSetAP+$iface" >>/run/interfaces.d/$iface
+	done
+	systemctl restart networking
+	/bin/systemctl restart qubes-network
+fi
+
+
+
+
+

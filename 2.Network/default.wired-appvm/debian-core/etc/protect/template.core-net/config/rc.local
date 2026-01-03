@@ -1,0 +1,23 @@
+#!/bin/bash
+
+while ! ps -A | grep qrexec-agent >/dev/null 2>&1 ; do
+    sleep 1
+done
+sleep 1
+
+/bin/systemctl start qubes-iptables
+/bin/systemctl start qubes-network
+mkdir -p /run/interfaces.d
+
+for iface in $(ls /sys/class/net | grep -E '^(eth|ens)'); do
+	echo "auto $iface" >/run/interfaces.d/$iface
+	echo "iface $iface inet dhcp" >>/run/interfaces.d/$iface
+	echo "	up /usr/bin/qrexec-client-vm -tT core-tor liteqube.TorSetAP+$iface" >>/run/interfaces.d/$iface
+done
+systemctl restart networking
+/usr/lib/qubes/qubes-setup-dnat-to-ns
+
+
+
+
+

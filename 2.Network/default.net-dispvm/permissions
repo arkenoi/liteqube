@@ -6,6 +6,8 @@ drwxr-xr-x	root	root	./debian-core/etc/protect/template.core-net/config
 -rwxr-xr-x	root	root	./debian-core/etc/protect/template.core-net/config/rc.local
 drwxr-xr-x	root	root	./debian-core/etc/protect/template.core-net/config/qubes-bind-dirs.d
 -rw-r--r--	root	root	./debian-core/etc/protect/template.core-net/config/qubes-bind-dirs.d/50_user.conf
+-rwxr-xr-x	root	root	./debian-core/usr/lib/NetworkManager/dispatcher.d/30-liteqube
+-rw-r--r--	root	root	./debian-core/usr/lib/NetworkManager/conf.d/30-liteqube.conf
 drwx------	root	root	./debian-core/etc/protect/whitelist.core-net
 drwxr-xr-x	root	root	./debian-core/etc/protect/whitelist.core-net/bind-dirs
 drwxr-xr-x	root	root	./debian-core/etc/protect/whitelist.core-net/bind-dirs/etc
