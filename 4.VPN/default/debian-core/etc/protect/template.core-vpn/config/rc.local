@@ -9,10 +9,10 @@ if [ -e /var/run/qubes/qubes-ns ] ; then
 fi
 echo "nameserver ${NS1}${RETURN}nameserver ${NS2}" > /run/resolv.conf
 
-/bin/systemctl enable qubes-iptables
+#/bin/systemctl enable qubes-iptables
 /bin/systemctl start qubes-iptables
 
-/bin/systemctl enable qubes-network
+#/bin/systemctl enable qubes-network
 /bin/systemctl start qubes-network
 
 [ -x "/rw/config/liteqube-settings" ] && . /rw/config/liteqube-settings

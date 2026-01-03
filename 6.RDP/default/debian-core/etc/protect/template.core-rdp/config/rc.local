@@ -11,13 +11,13 @@ echo "nameserver ${NS1}${RETURN}nameserver ${NS2}" > /run/resolv.conf
 
 /bin/systemctl start qubes-gui-agent
 
-/bin/systemctl enable liteqube-shutdown-inactive
+#/bin/systemctl enable liteqube-shutdown-inactive
 /bin/systemctl start liteqube-shutdown-inactive
 
-/bin/systemctl enable qubes-iptables
+#/bin/systemctl enable qubes-iptables
 /bin/systemctl start qubes-iptables
 
-/bin/systemctl enable qubes-network
+#/bin/systemctl enable qubes-network
 /bin/systemctl start qubes-network
 
 sudo -u user pulseaudio --start -n --file=/etc/pulse/qubes-default.pa --exit-idle-time=-1
