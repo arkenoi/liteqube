@@ -1,18 +1,26 @@
+a Liteqube puts Qubes OS on a diet
 
-# Liteqube puts Qubes OS on a diet
-
-Copyright (C) 2017-2023 Alex Barinov 2023-2024 Alex Smirnoff
-
+Copyright (C) 2017-2023 Alex Barinov 2023-2025 Alex Smirnoff
+ 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
+ 
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
+ 
 You should have received a copy of the GNU General Public License along with this program.  If not, see [here](https://www.gnu.org/licenses/).
 
-Liteqube was created in 2017 by Alex Barinov (https://github.com/a-barinov) to run Qubes on a rather low-spec GPD Win 2 (Core m3-7Y30, 8Mb RAM). Taking 2Gb of RAM to run dom0 and fully torified set of services, it allowed him to use a device with 8MB of RAM quite comfortably.
+TL;DR: more minimal than "normal minimal" debian templates, lightweight service qubes (net, tor, usb, possibly audio), readonly root, 
+fllesystem control, the rest is optional. Also you may reduce networking qube further if your network is wired-only.
+If you have USB audio, install 7.Audio also, but it was significantly less tested.
+Downsides: you will lose most of the fancy widgets, including the volume control and network icon. I will do my best to bring it back soon.
 
-7 years further down the road, Liteqube grew wider but not fatter (well, just a bit) and still pursues the original goals:
- 1. Low memory consumption; 1.5Gb of RAM required to run network, firewall, tor and usb qubes. Technically it still could run within 1Gb, but we changed the defaults in the sake of optimal performance and stability.
+Unpack to dom0, go to 1.Base, 2.Network and 3.USB and run install.sh script there, in that sequence. If anything fails, run uninstall.sh and retry,
+maybe you need to restart your firewall vm to restore network connectivity.
+
+Liteqube was created by Alex Barinov in 2017 to run Qubes on a rather low-spec GPD Win 2 (Core m3-7Y30, 8Mb RAM). Taking 2Gb of RAM to run dom0 and fully torified set of services, it allowed me to use a device with 8MB of RAM quite comfortably.
+However, shortly after, apparently, Alex lost interest to the project so I took over at this point.
+
+8 years further down the road, Liteqube grew wider but not fatter and still pursues the original goals:
+ 1. Low memory consumption; 1Gb of RAM required to run network, firewall, tor and usb qubes
  2. Services isolation: every service gets a separate qube to minimise damage from potential exploits; to the extent what default Qubes installation cannot offer due to heavy resource consumption of the default system qubes.
  3. Stateless disposable qubes for most of the services interacting with outside world
  4. Easy on ssd: most qubes run with read-only root fs, most volatile folders are kept on tmpfs
@@ -53,15 +61,15 @@ Here is the same install with Liteqube taking over network, firewall, tor and us
 You can see significantly reduced memory consumption, boot time and amount of disk writes.
 
 Here is how this level of efficiency is achieved:
- - Minimised Debian template is used to run the service qubes, spinned off from debian-12-minimal. It does not have a single package installed that's not required for the setup to work. Base system takes around 800Mb of disk space, it then goes up as additional services (e.g. tor, network-manager) are installed. This is the only template qube used so keeping the whole setup up-to-date is easy.
+ - Minimised Debian template is used to run the service qubes, spinned off from debian-13-minimal. It does not have a single package installed that's not required for the setup to work. Base system takes around 800Mb of disk space, it then goes up as additional services (e.g. tor, network-manager) are installed. This is the only template qube used so keeping the whole setup up-to-date is easy.
  - Most services run in disposable qubes ensuring these qubes are completely stateless. Notable exceptions are tor qube that needs to update guard nodes, and mail-receiving qube that needs to keep what's received in case power fails, Qubes OS crashes, or any other disaster occurs.
  - To initialise disposable qubes based on single template, a qube templating & boot-time check mechanism is used, inspired by vm-boot-protect project.
  - Qubes that don't need xorg for operation (most of them, really) run headless. A custom split-xorg setup is used in case you need an emergency shell.
  - Valuable stuff (files, passwords, ssh and gpg keys) are stored in a separate offline qube that provides key material to qubes that need it.
- - Existing Qubes install (both dom0 and user qubes) remains untouched. Liteqube will install a few packages to dom0 (if not installed already): qubes-template-debian-12-minimal, parted and gdisk, zenity and dialog, . The first three can be removed after the installation completes. Some rpc scripts and policies will be installed into `/etc/qubes-rpc`, all named `liteqube.xxx` so auditing them is easy. Some optional but helpful scripts will be put into `~/bin` folder with `lq-xxx` naming pattern.
+ - Existing Qubes install (both dom0 and user qubes) remains untouched. Liteqube will install a few packages to dom0 (if not installed already): qubes-template-debian-13-minimal, parted and gdisk, zenity and dialog, . The first three can be removed after the installation completes. Some rpc scripts and policies will be installed into `/etc/qubes-rpc`, all named `liteqube.xxx` so auditing them is easy. Some optional but helpful scripts will be put into `~/bin` folder with `lq-xxx` naming pattern.
 
 ### How to install:
- 1. Download liteqube-0.95.tar.gz [here:](https://github.com/arkenoi/liteqube/archive/refs/tags/v0.95.tar.gz).
+ 1. Download liteqube-0.97.tar.gz [here:](https://github.com/arkenoi/liteqube/releases/tag/0.97).
  2. Transfer it to dom0 and unpack to a folder of your choice.
  3. Go to '1.Base' folder, review, edit / change settings as needed and run `install.sh` script there.
  4. Once base system is installed, proceed with installation of the components you need from other folders.
@@ -82,15 +90,14 @@ To support creation of disposable qubes, a template qube called core-dvm is crea
 core-keys qube is installed to avoid storing confidential information required by disposable qubes inside debian-core or core-dvm. Base install does not need this qube but many other components will.
 
 A few installation notes:
- - You will need to respond 'Yes' once during the install as partition table changes in gdisk are not fully scriptable.
  - You will get one 'debian-core: files quarantined during boot' error message and one 'core-keys: files quarantined during boot' error message. This is normal and happens when templating mechanism gets rolled out first time.
- - There are two serious qubes backup bugs, [#5393](https://github.com/QubesOS/qubes-issues/issues/5393) and [#7176](https://github.com/QubesOS/qubes-issues/issues/7176). First one leaves you with corrupt backups, second with inability to restore. You've been warned!
- - core-usb has usbguard enabled by default, and the installation may need more debug. If you ended up with [apparently] non-functional USB qube, it is most likely that it is a USBGuard config glitch. Run lq-xterm for debian-core, remount the root fs as rw (mount -o remount,rw /), and edit /etc/usbguard/rules.conf to make sure your policy is permissive enough.
+ - usbguard is initially set in permissive mode, since most modern computers rely on USB input. If you have ps/2 input devices and want more tight USB security, adjust rules.conf accordingly.
 
 ### Network
 This script will create two firewalls (fw-net and fw-tor, equivalent of sys-firewall), network qube (core-net, equivalent of sys-net), tor qube (core-tor, equivalent of whonix-gw) and a separate qube to handle system updates (core-update).
 
-Two firewall options are offered, linux-based firewall and mirage-firewall, with the linux-based firewall installed by default (due to [potential performance problems with mirage](https://github.com/mirage/qubes-mirage-firewall/issues/130)). Two firewalls are created by default: fw-net shields the whole system from core-net and fw-tor shields torified qubes from core-tor. That's extra-secure setup, fw-tor is not strictly necessary and can be deleted, in which case you need to set core-tor as network vm for core-update. Once firewall is set up you can set fw-tor (or core-tor) as net vm for any qube you want to torify.
+Two firewall options are offered, linux-based firewall and mirage-firewall, with mirage-firewall installed by default. Two firewalls are created by default: fw-net shields the whole system from core-net and fw-tor shields torified qubes from core-tor. That's extra-secure setup, fw-tor is not strictly necessary and can be deleted, in which case you need to set core-tor as network vm for core-update. Once firewall is set up you can set fw-tor (or core-tor) as net vm for any qube you want to torify.
+However, mirage-firewall seems to be "fragile" to netvm restarts (and sometimes even access point changes), and needs to be restarted itself each time. I will probably add a watchdog to handle this.
 
 Network qube core-net is disposable by default, it can be switched to normal appvm in the installation script settings. Disposable core-net makes it more secure but also means any new access points will not be saved automatically. You will need to manually add any newly added access points to either debian-core or core-keys, more on this below.
 
@@ -143,11 +150,7 @@ Since some mail readers (e.g. Thunderbird) cannot use command line to receive an
 
 To automatically check mail every 30 minutes (configurable), a systemd user service can be created in dom0.
 
-### Smart card
-Adds qubes-ctap (fido2) and pkcs11 smartcard forwarding support to core-usb. Discoverable keys are not tested yet. pkcs11 remoting is implemented with p11-kit. If remote-pkcs11 service is enabled in the client qube, p11-kit-client.so attaches to the liteqube.pkcs11 service on core-usb via qrexec api, and the service calls p11-kit remote interface to opensc-pkcs11. It may be easily modified to use a proprietary middleware library instead of opensc-pkcs11. 
-
-Bugs: sometimes pcscd fails to autostart in core-usb, and the card may be undetected. Also, stalled client connections sometimes pile up, need to investigate.
-If you enable pkcs11 system-wide, ALL Gnome programs would try to attach to the smartcard, even if there is apparently no need for them to do so. It causes enormous number of system dialogs to appear and may be quite annoying.
+Liteqube mail support also includes a replacement for split-gpg pre-configured to work with core-keys.
 
 ### Templating mechanism
 This is the key service allowing Liteqube to run different disposable qubes off the same template. It runs very early on boot and checks private partition to ensure it contains only the files needed. Any file not fitting the configuration is put into quarantine or deleted.
@@ -157,16 +160,89 @@ Setup is driven by `/etc/protect` folder that has 4 components:
  - File checker: `checksum.ALL` and `checksum.<vm name>` hold checksums of the files that shall be present in `/rw` folder but cannot be held in debian-core for confidentiality reasons. Permissions of the files/folders will be set exactly as in `/etc/protect` folder. Each checksum file contains 2 lines, sha256 and sha512 checksum. Vm-specific files take precedence over `checksum.ALL` files.
  - In case you need to ignore a file, it shall be put into `whitelist.<vm name>`. To ignore all files or all dirs in a certain dir, put `.any_file` or `.any_dir` file into a dir.
 
-### Using 'core-keys' for key or password storage
-As of Liteqube 0.93, core-keys supports providing files, passwords, ssh and gpg keys (collectively called key material) to other qubes on request. You can use `lq-addkey` command in dom0 to put key material into core-keys qube. This script provides instructions on how to retrieve key material in the qube that needs to use it.
+### Liteqube RPC API
+
+**Notification**
+
+In dom0,
+
+- liteQube.Message: displays argument as a message (default timeout 2000)
+- liteQube.Error: displays argument as an error notification (default timeout 5000)
+
+**Keys and password storage in core-keys**
+
+Since Liteqube 0.93, core-keys supports providing files, passwords, ssh and gpg keys (collectively called key material) to other qubes on request. You can use `lq-addkey` command in dom0 to put key material into core-keys qube. This script provides instructions on how to retrieve key material in the qube that needs to use it.
 Here are some details on the underlying setup in case you want to do some customisations:
 
-- **Files**: In core-keys, you need to save a file under `/home/user/<qube name>/<filename>`, this file can then be requested only by that qube through `liteqube.SplitFile` service. Don't forget that this file needs to be added to `/etc/protect` dir (either as checksum or whitelist) otherwise it will be quarantined during the next core-keys start.
-- **Passwords**: `/home/user` dir contains `password-<qube name>` scripts, receiving token (e.g. username) as command line option and printing password to stdout. It is called by `liteqube.SplitPassword` service that can be used by other qubes for password provisioning. If there is no password present in core-keys, a it will call `liteqube.SplitPassword` in dom0, you will then be prompted for password and also prompted if it shall be saved into core-keys.
-- **SSH keys**: this is based on ability of ssh to use ssh-agent over a socket that can be passed from a different qube. You store your ssh keys in core-keys in `/home/user/.ssh` as you would do normally. In a qube that needs to use these keys you should start `liteqube-split-ssh.socket` and you should *not* start local ssh-agent.
-- **GPG keys**: similar to ssh-agent, this is based on gpg-agent being able to work over socket passed from another qube. This setup assumes your master key is located in vault and you use subkey of that key for email encryption and signing. Add your private and public subkeys to gpg in core-keys qube, and add your public key to a qube that needs to use private subkey securely. In that qube you should start `liteqube-split-gpg.socket` and you should *not* start local gpg-agent.
+- liteqube.SplitFile: In core-keys, you need to save a file under `/home/user/<qube name>/<filename>`, this file can then be requested only by that qube through `liteqube.SplitFile` service. Don't forget that this file needs to be added to `/etc/protect` dir (either as checksum or whitelist) otherwise it will be quarantined during the next core-keys start.
+- liteqube.SplitPassword: `/home/user` dir contains `password-<qube name>` scripts, receiving token (e.g. username) as command line option and printing password to stdout. It is called by `liteqube.SplitPassword` service that can be used by other qubes for password provisioning. If there is no password present in core-keys, a it will call `liteqube.SplitPassword` in dom0, you will then be prompted for password and also prompted if it shall be saved into core-keys.
+- liteqube.SplitSSH: this is based on ability of ssh to use ssh-agent over a socket that can be passed from a different qube. You store your ssh keys in core-keys in `/home/user/.ssh` as you would do normally. In a qube that needs to use these keys you should start `liteqube-split-ssh.socket` and you should *not* start local ssh-agent.
+
+**xorg**
+
+liteqube.SplitXorg simply exposes xorg socket on the traget qube (core-xorg) via qubes rpc connection.
+
+**Network**
+
+liteqube-wifi-monitor-state service runs in core-net on timer every 10 seconds. It checks wifi connection status, signal strength and access point name.
+Within this service, several status updates are signaled to dom0 via liteqube.SignalWifi rpc call:
+
+- EN-0 , WiFi disabled
+- EN-1 , WiFi enabled
+- ST-0 , WiFi disconnected 
+- ST-30, WiFi connecting
+- ST-100, WiFi connected
+- SI-<1-100>, signal strength
+- AP-<SSID> access point name
+
+Now dom0 handler is a simple notification, but it could be used to make a meter widget in the future.
+
+liteqube.WiFiSetState takes "off" argument to turn the wifi off on core-net, it is not currenlty used by any other script.
+
+tor status
+liteqube.SignalTor to dom0
+
+- 0-99, boostrap
+- 100 , connected
+- 200 , disconnected
+- status 500 (direct uplink), 501 (obfs4 uplink) and 999 (terminated) are obsoleted.
+
+
+Access point changes are also set from core-net to core-tor (liteqube.TorSetAP) On this notification, when access point changes, the service shuts Tor
+down, backs up the guard node configuration and restores AP-specific for new access point if one already exists, to prevent cross-AP fingerprinting.
+
+On the first run of Tor service, liteqube.WifiRequestAP is called in opposite direction (from core-tor to core-net), just to prepare initial TorSetAP before Tor
+is initialized.
+liteqube.WifiMonitor and liteqube.TorMonitor are core-net services to initiate SignalWifi and SignalTor updates to dom0 respectively.
+
+liteqube.TorRestart restarts tor on core-tor
+
+**USB**
+
+liteqube.SignalStorage is just a generic notifier called from udev rules on core-usb; it reports new block devices, filesystems and its sizes to dom0.
+No special handling on dom0 side exists.
+
+**VPN**
+liteqube.SignalVPN is another generic dom0 notifier service (status: connecting/connected/disconnected)
+
+**RDP**
+
+liteqube.RDP is called on RDP qube to run a gui remote destkop client (rdp or vnc, split xorg is not used), optionally using split-ssh as tunnel and core-keys to store the password.
+
+**Audio**
+
+liteqube.SoundVolume sets volume on core-sound (takes commands: MUTE, UNMUTE, UP, DOWN, NOOPi (report current volume)  or direct set in numeric range 1-100).
+liteqube.SignalSound takes current status but does not actually do anything useful.
+
+**Print**
+
+liteqube.PrintFIle is supposed to take the file from stdin and print it using argument as a name but the service was never here.
+
 
 ### Using Tor Browser with 'core-tor'
+Since core-tor is extremely lightweight, it does not provide streams isolation via multiple tor instances.
+The rest of functionality, however, is there, and whonix-ws may use core-tor as upstream, though it is generally not recommended.
+
 1. Create an AppVM for Tor Browser
 2. Set 'core-tor' as netvm for your AppVM
 3. Install Tor Browser into AppVM. For this instruction '\~/.torbrowser' is assumed to be your installation path.
@@ -200,7 +276,6 @@ Here are some details on the underlying setup in case you want to do some custom
 9. Restart Tor Browser
 
 Credits for this instruction go to @dostisurta on github
-It is doable for anon-whonix as well, but you won't get proper stream isolation, so this approach is not advised, it is better to keep sys-whonix running.
 
 ### Using Thunderbird with split-gpg
 Since version 78, Thunderbird uses built-in PGP implementation that does not work with split gpg. Here are the steps needed switch to using external gpg binary, assuming you already imported your gpg keys into core-keys and Thunderbird qubes:
@@ -221,21 +296,21 @@ Since version 78, Thunderbird uses built-in PGP implementation that does not wor
 9. Restart Thunderbird and send a test email to check your new setup.
 
 ### Further development
-Before 1.0:
-
- - Tray applet(s) providing user-friendly access to liteqube functionality;
- - Lightweight core-net for wired-only connections without network-manager;
- - Move everything back to salt. Liteqube for Qubes 4.1 was started as a set of salt scripts but shell seemed easier at the moment.
+Before 1.0 release
+ - tray applet providing user-friendly access to liteqube functionality (network status at least, probably sound)
+ - move everything to Ansible or Salt 
 
 The following components will be added after 1.0 release:
 
  - RDP/VNC: polish vnc support
- - VPN: add more VPN types
- - USB: add bluetooth support
+ - USB: add bluetooth support. Optional separate disposable qube for smartcards.
  - Dispvm core-net: suggest saving new WiFi accesspoints 
  - Base: add plausible deniability support for luks password, core-keys and vault qubes
  - Base: add secure boot support and ability to store luks key on TPM chip
  - GUI: create core-gui qube that works with video card directly
+ - VPN: mirage-vpn support, make sure VPN "hard fails"
+ - Tor: rework architecure, move transparent redirection to firewall qube and disable packet forwarding in core-tor, making the whole system more secure and failsafe.
+
  
 The following improvements can be made to further enhance security, stability and performance of the setup, but are currently not a priority:
  - Improve security of Liteqube systemd services using builtin systemd tools.
@@ -269,3 +344,14 @@ The following improvements can be made to further enhance security, stability an
  - Adjusted for Qubes 4.2
  - Debian templates migrated to Bookworm (12)
  - Added smart card support
+
+27 December 2025, version 0.07:
+ - Adjust for Qubes 4.3
+ - Debian templates migrated to Trixie (13)
+ - Mirage is back by default
+ - WiFi support is fixed
+ - Wired netvm option without Network-Manager
+ - Smartcard support moved to main 3.USB installation
+ - Better volume resizes and other bugfixes
+ - Documented RPC calls
+ 
