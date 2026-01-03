@@ -2,20 +2,32 @@
 
 /sbin/fstrim --quiet /rw
 
-/bin/rm /run/resolv.conf
-/bin/ln -s /run/NetworkManager/resolv.conf /run/resolv.conf
-
-/bin/systemctl enable qubes-iptables
+#/bin/systemctl enable qubes-iptables
 /bin/systemctl start qubes-iptables
 
-/bin/systemctl enable qubes-network
+#/bin/systemctl enable qubes-network
 /bin/systemctl start qubes-network
 
-/bin/systemctl enable NetworkManager
-/bin/systemctl start NetworkManager
 
-/bin/systemctl enable liteqube-wifi-monitor-state
-/bin/systemctl start liteqube-wifi-monitor-state
+if [ -e "/etc/NetworkManager/NetworkManager.conf" ]; then
+	/bin/rm /run/resolv.conf
+	/bin/ln -s /run/NetworkManager/resolv.conf /run/resolv.conf
 
-/bin/systemctl enable liteqube-wifi-monitor-signal
-/bin/systemctl start liteqube-wifi-monitor-signal
+#	/bin/systemctl enable NetworkManager
+	/bin/systemctl start NetworkManager
+
+#	/bin/systemctl enable liteqube-wifi-monitor-state
+	/bin/systemctl start liteqube-wifi-monitor-state
+
+	/bin/systemctl start liteqube-wifi-monitor-signal
+	/usr/lib/qubes/qubes-setup-dnat-to-ns
+else
+	mkdir -p /run/interfaces.d
+	for iface in $(ls /sys/class/net | grep -E '^(eth|ens)'); do
+		echo "auto $iface" >/run/interfaces.d/$iface
+		echo "iface $iface inet dhcp" >>/run/interfaces.d/$iface
+		echo "  up /usr/bin/qrexec-client-vm -tT core-tor liteqube.TorSetAP+$iface" >>/run/interfaces.d/$iface
+	done
+	systemctl restart networking
+	/usr/lib/qubes/qubes-setup-dnat-to-ns
+fi
