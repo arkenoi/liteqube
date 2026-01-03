@@ -34,16 +34,16 @@ vm_configure ${VM_CORE} 'pvh' 1024 '' ''
 
 message "CONFIGURING ${YELLOW}dom0"
 push_files "dom0"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Message * ${VM_CORE} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Message * ${VM_DVM} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Message * ${VM_XORG} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Message * ${VM_KEYS} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_CORE} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_DVM} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_XORG} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_KEYS} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.SplitXorg * ${VM_DVM} ${VM_XORG} allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_KEYS} ${VM_XORG} allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Message * ${VM_CORE} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Message * ${VM_DVM} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Message * ${VM_XORG} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Message * ${VM_KEYS} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_CORE} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_DVM} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_XORG} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_KEYS} dom0 allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.SplitXorg * ${VM_DVM} ${VM_XORG} allow"
+add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_KEYS} ${VM_XORG} allow"
 [ -x /bin/zenity ] || sudo qubes-dom0-update -y --console --show-output zenity
 dom0_command lq-xterm
 

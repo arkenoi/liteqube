@@ -365,7 +365,7 @@ add_permission()
     _ADP_VM_FROM="${2}"
     _ADP_VM_TO="${3}"
     _ADP_PERMISSION="${4}"
-    add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.${_ADP_PERMISSION_NAME} * ${_ADP_VM_FROM} ${_ADP_VM_TO} ${_ADP_PERMISSION}"
+    add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.${_ADP_PERMISSION_NAME} * ${_ADP_VM_FROM} ${_ADP_VM_TO} ${_ADP_PERMISSION}"
 }
 
 vm_find_template()
