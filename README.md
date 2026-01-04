@@ -16,7 +16,7 @@ Downsides: you will lose most of the fancy widgets, including the volume control
 Unpack to dom0, go to 1.Base, 2.Network and 3.USB and run install.sh script there, in that sequence. If anything fails, run uninstall.sh and retry,
 maybe you need to restart your firewall vm to restore network connectivity.
 
-Liteqube was created by Alex Barinov in 2017 to run Qubes on a rather low-spec GPD Win 2 (Core m3-7Y30, 8Mb RAM). Taking 2Gb of RAM to run dom0 and fully torified set of services, it allowed me to use a device with 8MB of RAM quite comfortably.
+Liteqube was created by Alex Barinov in 2017 to run Qubes on a rather low-spec GPD Win 2 (Core m3-7Y30, 8Gb RAM). Taking 2Gb of RAM to run dom0 and fully torified set of services, it allowed me to use a device with 8GB of RAM quite comfortably.
 However, shortly after, apparently, Alex lost interest to the project so I took over at this point.
 
 8 years further down the road, Liteqube grew wider but not fatter and still pursues the original goals:
