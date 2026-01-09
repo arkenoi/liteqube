@@ -5,7 +5,7 @@ chmod +x ../.lib/lib.sh
 SYS_NET="sys-net"
 SYS_FIREWALL="sys-firewall"
 
-sudo cp ./qubes-dom0.repo /etc/yum.repos.d
+#sudo cp ./qubes-dom0.repo /etc/yum.repos.d
 #sudo vi /etc/yum.repos.d/qubes-templates.repo
 
 qvm-shutdown --quiet --wait --force "${VM_UPDATE}"
@@ -24,7 +24,7 @@ qubes-prefs --quiet --set clockvm "${SYS_FIREWALL}"
 qvm-prefs --set "${SYS_NET}" autostart True
 qvm-prefs --set "${SYS_FIREWALL}" autostart True
 
-sudo rm -rf "/etc/qubes-rpc/policy/qubes.UpdatesProxy"
+#sudo rm -rf "/etc/qubes-rpc/policy/qubes.UpdatesProxy"
 
 qvm-remove --force "${VM_UPDATE}"
 qvm-remove --force "${VM_FW_TOR}"

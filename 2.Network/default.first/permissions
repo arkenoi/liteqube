@@ -35,7 +35,3 @@ drwxrwsr-x	root	root	./debian-core/etc/protect/template.core-update/usrlocal/bin
 drwxr-xr-x	root	root	./debian-core/var/spool/cron
 -rwxr-xr-x	root	root	./dom0/etc/qubes-rpc/liteqube.SignalTor
 -rwxr-xr-x	root	root	./dom0/etc/qubes-rpc/liteqube.SignalWifi
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.SignalTor
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.SignalWifi
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.TorSetAP
--rw-r--r--	root	root	./dom0/etc/qubes-rpc/policy/liteqube.WifiRequestAP
