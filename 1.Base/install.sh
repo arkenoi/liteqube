@@ -105,22 +105,22 @@ message "INSTALLING PARTED AND GDISK TOOLS IN ${YELLOW}dom0"
 
 VM_LVM="${VM_CORE//-/--}"
 
-if [ x"${VM_CORE_CREATED}" = x"true" && -e "/dev/mapper/${VM_GROUP}--${VM_LVM}--root" ] ; then
+if [ x"${VM_CORE_CREATED}" = x"true" ] && [ -e "/dev/mapper/${VM_GROUP}--${VM_LVM}--root" ] ; then
     vm_resize_private ${VM_CORE} ${PRIVATE_DISK_MB}
-    if [ x"${ROOT_DISK_MB}" != x"" && x"${ROOT_DISK_MB}" != x"0" ] ; then
-       message "RESIZING ROOT FILESYSTEM OF ${YELLOW}${VM_CORE}"
-       sudo kpartx -a "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
-       sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3"
-       sudo resize2fs "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3" $(( ${ROOT_DISK_MB}-700 ))M
-       sudo kpartx -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
-       size_sect=$(( ((ROOT_DISK_MB - 300) * 1024 * 1024) / 512))
-       start=$(sudo sfdisk -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"|tail -1|grep -oP 'start=\s*\K[0-9]+')
-       echo "$start,$size_sect"|sudo sfdisk --no-reread -N 3 "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
-       echo "y" | sudo lvresize -y -f "/dev/mapper/${VM_GROUP}--${VM_LVM}--root" -L ${ROOT_DISK_MB}M || true
-       sudo sgdisk -e "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
-       sudo kpartx -a "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
-       sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3"
-       sudo kpartx -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+    if [ x"${ROOT_DISK_MB}" != x"" ] && [ x"${ROOT_DISK_MB}" != x"0" ] ; then
+        message "RESIZING ROOT FILESYSTEM OF ${YELLOW}${VM_CORE}"
+        sudo kpartx -a "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+        sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3"
+        sudo resize2fs "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3" $(( ${ROOT_DISK_MB}-700 ))M
+        sudo kpartx -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+        size_sect=$(( ((ROOT_DISK_MB - 300) * 1024 * 1024) / 512))
+        start=$(sudo sfdisk -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"|tail -1|grep -oP 'start=\s*\K[0-9]+')
+        echo "$start,$size_sect"|sudo sfdisk --no-reread -N 3 "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+        echo "y" | sudo lvresize -y -f "/dev/mapper/${VM_GROUP}--${VM_LVM}--root" -L ${ROOT_DISK_MB}M || true
+        sudo sgdisk -e "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+        sudo kpartx -a "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
+        sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${VM_LVM}--root3"
+        sudo kpartx -d "/dev/mapper/${VM_GROUP}--${VM_LVM}--root"
     fi
 
 fi
