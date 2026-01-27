@@ -71,11 +71,11 @@ check_policy() {
     _CP_POLICY="${1}"
     _CP_SUBJECT="${2}"
 
-    if ! cat "/etc/qubes-rpc/policy/liteqube.${_CP_POLICY}" | grep "${TARGET_QUBE}[[:space:]]${KEYS_QUBE}" >/dev/null 2>&1 ; then
+    if ! cat "/etc/qubes/policy.d/40-config-liteqube.policy" | grep "liteqube.${_CP_POLICY}[[:space:]]\*[[:space:]]${TARGET_QUBE}[[:space:]]${KEYS_QUBE}" >/dev/null 2>&1 ; then
         echo "WARNING: ${TARGET_QUBE} does not have permission to request ${_CP_SUBJECT} from ${KEYS_QUBE}"
         echo -n "Do you want to add policy to allow this? (N/y): "
         read INPUT
-        [ x"$INPUT" != x"y" ] || sudo /bin/sh -c "echo '${TARGET_QUBE} ${KEYS_QUBE} ask,default_target=${KEYS_QUBE}' >> /etc/qubes-rpc/policy/liteqube.${_CP_POLICY}"
+        [ x"$INPUT" != x"y" ] || sudo /bin/sh -c "echo 'liteqube.${_CP_POLICY}	*	${TARGET_QUBE}	${KEYS_QUBE}	ask default_target=${KEYS_QUBE}' >> /etc/qubes/policy.d/40-config-liteqube.policy"
     fi
 }
 
@@ -141,11 +141,11 @@ case "${1}" in
         qrexec-client -t -T -d "${KEYS_QUBE_TEMPLATE}" root:"chown user:user '/etc/protect/checksum.${KEYS_QUBE}/home/user/${TARGET_QUBE}/${FILE_NAME}'" || exit_with_error "ERROR: Changing ownership of '/etc/protect/checksum.${KEYS_QUBE}/home/user/${TARGET_QUBE}/${FILE_NAME}' in '${KEYS_QUBE_TEMPLATE}' failed"
         qrexec-client -t -T -d "${KEYS_QUBE_TEMPLATE}" root:"chmod 0600 '/etc/protect/checksum.${KEYS_QUBE}/home/user/${TARGET_QUBE}/${FILE_NAME}'" || exit_with_error "ERROR: Changing permissions of '/etc/protect/checksum.${KEYS_QUBE}/home/user/${TARGET_QUBE}/${FILE_NAME}' in '${KEYS_QUBE_TEMPLATE}' failed"
 
-        if ! cat "/etc/qubes-rpc/policy/liteqube.SplitFile" | grep "${TARGET_QUBE}[[:space:]]${KEYS_QUBE}" >/dev/null 2>&1 ; then
+        if ! cat "/etc/qubes/policy.d/40-config-liteqube.policy" | grep "liteqube.SplitFile[[:space:]]\*[[:space:]]${TARGET_QUBE}[[:space:]]${KEYS_QUBE}" >/dev/null 2>&1 ; then
             echo "WARNING: ${TARGET_QUBE} does not have permission to request files from ${KEYS_QUBE}"
             echo -n "Do you want to add policy to allow this? (N/y): "
             read INPUT
-            [ x"$INPUT" = x"y" ] && sudo /bin/sh -c "echo '${TARGET_QUBE} ${KEYS_QUBE} ask,default_target=${KEYS_QUBE}' >> /etc/qubes-rpc/policy/liteqube.SplitFile"
+            [ x"$INPUT" != x"y" ] || sudo /bin/sh -c "echo 'liteqube.SplitFile	*	${TARGET_QUBE}	${KEYS_QUBE}	ask default_target=${KEYS_QUBE}' >> /etc/qubes/policy.d/40-config-liteqube.policy"
         fi
 
         echo ""

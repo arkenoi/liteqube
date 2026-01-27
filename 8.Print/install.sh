@@ -25,6 +25,13 @@ vm_fail_if_missing "${VM_DVM}"
 vm_create "${VM_PRINT}" "dispvm"
 vm_configure "${VM_PRINT}" "pvh" 1024 'fw-net' 'dom0'
 
+message "RECORDING SNAPSHOT FOR ${YELLOW}${VM_CORE}"
+qvm-shutdown --force --wait ${VM_CORE}
+mkdir -p /tmp/liteqube-rollback.8
+qvm-volume info "${VM_CORE}:root" revisions|tail -1 >"/tmp/liteqube-rollback.8/snapshot-${VM_CORE}-root.id"
+qvm-volume info "${VM_CORE}:private" revisions|tail -1 >"/tmp/liteqube-rollback.8/snapshot-${VM_CORE}-private.id"
+message "MAKING ${YELLOW}dom0${PREFIX} CONFIG BACKUPS"
+cp ${LQ_POLICYFILE} /tmp/liteqube-rollback.8/
 
 message "CONFIGURING ${YELLOW}${VM_CORE}"
 install_packages "${VM_CORE}" cups qubes-usb-proxy "${PDF_PREVIEW}" ${PRINTER_DRIVERS}
@@ -47,11 +54,9 @@ done
 
 message "CONFIGURING ${YELLOW}dom0"
 push_files "dom0"
-add_permission "Message" "${VM_PRINT}" "dom0" "allow"
-add_permission "Error" "${VM_PRINT}" "dom0" "allow"
-add_permission "SplitXorg" "${VM_PRINT}" "dom0" "allow"
+setup_permissions "${VM_PRINT}" xorg
 for VM in ${QQUBES_ALLOWED_TO_PRINT} ; do
-    add_permission "PrintFile" "${VM}" "${VM_PRINT}" "ask,default_target=${VM_PRINT}"
+    add_permission "PrintFile" "${VM}" "${VM_PRINT}" "ask default_target=${VM_PRINT}"
 done
 dom0_install_command lq-printers
 #TODO: create script for easy usb device sharing

@@ -4,6 +4,8 @@
 . ./settings-installer.sh
 #set -x
 
+
+
 message "UNSET ${YELLOW}${VM_VPN}${PREFIX} AS NETVM"
 if vm_exists "${VM_VPN}" ; then
     qvm-shutdown --quiet --wait --force "${VM_VPN}" 2>/dev/null
@@ -40,19 +42,20 @@ push_command "${VM_CORE}" "rm /lib/systemd/system/liteqube-vpn*.service 2>/dev/n
 qvm-shutdown --quiet --wait --force "${VM_CORE}" 2>/dev/null
 
 message "CLEANUP ${YELLOW}dom0"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.Message" "${VM_VPN}"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.Error" "${VM_VPN}"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.SplitXorg" "${VM_VPN}"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.SplitSSH" "${VM_VPN}"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.SignalVPN" "${VM_VPN}"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.Message" "${VM_VPN}-ssh"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.Error" "${VM_VPN}-ssh"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.SplitXorg" "${VM_VPN}-ssh"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.SplitSSH" "${VM_VPN}-ssh"
-cleanup_file "/etc/qubes-rpc/policy/liteqube.SignalVPN" "${VM_VPN}-ssh"
 sudo rm -f /etc/qubes-rpc/liteqube.SignalVPN 2>/dev/null
 rm -f ~/bin/lq-vpn 2>/dev/null
 [ -z "$(ls -A "${HOME}/bin")" ] && rm "${HOME}/bin"
+
+# Redundant
+#
+if [ -d /tmp/liteqube-rollback.4 ] ; then
+    message "ROLLBACK DIRECTORY FOUND, RESTORING STATE"
+    sudo cp /tmp/liteqube-rollback.4/40-config-liteqube.policy /etc/qubes/policy.d/
+    qvm-volume revert "${VM_CORE}:root" `cat /tmp/liteqube-rollback.4/snapshot-${VM_CORE}-root.id`
+    qvm-volume revert "${VM_CORE}:root" `cat /tmp/liteqube-rollback.4/snapshot-${VM_CORE}-private.id`
+else
+    message "ROLLBACK DIRECTORY NOT FOUND"
+fi
 
 message "DONE"
 exit 0

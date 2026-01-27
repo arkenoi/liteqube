@@ -42,5 +42,16 @@ systemctl --user disable liteqube-checkmail 2>/dev/null
 sudo rm /lib/systemd/user/liteqube-checkmail.service
 sudo rm -f /etc/qubes-rpc/liteqube.SignalMail 2>/dev/null
 
+if [ -d /tmp/liteqube-rollback.9 ] ; then
+    message "ROLLBACK DIRECTORY FOUND, RESTORING STATE"
+    qvm-shutdown --force --wait ${VM_CORE}
+    sudo cp /tmp/liteqube-rollback.9/40-config-liteqube.policy /etc/qubes/policy.d/
+    qvm-volume revert "${VM_CORE}:root" `cat /tmp/liteqube-rollback.9/snapshot-${VM_CORE}-root.id`
+    qvm-volume revert "${VM_CORE}:root" `cat /tmp/liteqube-rollback.9/snapshot-${VM_CORE}-private.id`
+else
+    message "ROLLBACK DIRECTORY NOT FOUND"
+fi
+
+
 message "DONE"
 exit 0

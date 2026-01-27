@@ -14,6 +14,14 @@ vm_fail_if_missing "${VM_CORE}"
 vm_fail_if_missing "${VM_DVM}"
 vm_fail_if_missing "${VM_KEYS}"
 
+message "RECORDING SNAPSHOT FOR ${YELLOW}${VM_CORE}"
+qvm-shutdown --force --wait ${VM_CORE}
+mkdir -p /tmp/liteqube-rollback.9
+qvm-volume info "${VM_CORE}:root" revisions|tail -1 >"/tmp/liteqube-rollback.9/snapshot-${VM_CORE}-root.id"
+qvm-volume info "${VM_CORE}:private" revisions|tail -1 >"/tmp/liteqube-rollback.9/snapshot-${VM_CORE}-private.id"
+message "MAKING ${YELLOW}dom0${PREFIX} CONFIG BACKUPS"
+cp ${LQ_POLICYFILE} /tmp/liteqube-rollback.9/
+
 message "CONFIGURING ${YELLOW}${VM_CORE}"
 qvm-start --quiet --skip-if-running "${VM_CORE}"
 push_files "${VM_CORE}"
@@ -24,19 +32,12 @@ qvm-shutdown --quiet --wait --force "${VM_CORE}"
 
 message "CONFIGURING ${YELLOW}dom0"
 push_files "dom0"
-add_permission "Message" "${VM_GETMAIL}" "dom0" "allow"
-add_permission "Error" "${VM_GETMAIL}" "dom0" "allow"
-add_permission "SplitXorg" "${VM_GETMAIL}" "${VM_XORG}" "allow"
-add_permission "SplitPassword" "${VM_GETMAIL}" "${VM_KEYS}" "ask,default_target=${VM_KEYS}"
+setup_permissions "${VM_GETMAIL}" xorg password
 add_permission "SignalMail" "${VM_GETMAIL}" "dom0" "allow"
 add_permission "MailReceive" "dom0" "${VM_GETMAIL}" "allow"
 add_permission "MailDownload" "${MAIL_QUBE}" "${VM_GETMAIL}" "allow"
-add_permission "Message" "${VM_SENDMAIL}" "dom0" "allow"
-add_permission "Error" "${VM_SENDMAIL}" "dom0" "allow"
-add_permission "SplitXorg" "${VM_SENDMAIL}" "${VM_XORG}" "allow"
-add_permission "SplitPassword" "${VM_SENDMAIL}" "${VM_KEYS}" "ask,default_target=${VM_KEYS}"
-add_permission "MailSend" "${MAIL_QUBE}" "${VM_SENDMAIL}" "ask,default_target=${VM_SENDMAIL}"
-add_permission "SplitGPG" "${MAIL_QUBE}" "${VM_KEYS}" "ask,default_target=${VM_KEYS}"
+setup_permissions "${VM_SENDMAIL}" xorg password gpg
+add_permission "MailSend" "${MAIL_QUBE}" "${VM_SENDMAIL}" "ask default_target=${VM_SENDMAIL}"
 dom0_install_command lq-mail
 dom0_install_command lq-addkey
 if [ -n "$MAIL_CHECK_INTERVAL" ] ; then

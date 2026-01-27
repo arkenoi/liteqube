@@ -15,6 +15,14 @@ vm_fail_if_missing "${VM_CORE}"
 vm_fail_if_missing "${VM_DVM}"
 vm_fail_if_missing "${VM_KEYS}"
 
+message "RECORDING SNAPSHOT FOR ${YELLOW}${VM_CORE}"
+qvm-shutdown --force --wait ${VM_CORE}
+mkdir -p /tmp/liteqube-rollback.4
+qvm-volume info "${VM_CORE}:root" revisions|tail -1 >"/tmp/liteqube-rollback.4/snapshot-${VM_CORE}-root.id"
+qvm-volume info "${VM_CORE}:private" revisions|tail -1 >"/tmp/liteqube-rollback.4/snapshot-${VM_CORE}-private.id"
+message "MAKING ${YELLOW}dom0${PREFIX} CONFIG BACKUPS"
+cp ${LQ_POLICYFILE} /tmp/liteqube-rollback.4/
+
 vm_exists "${VM_VPN}" && qvm-shutdown --quiet --wait --force "${VM_VPN}" || vm_create "${VM_VPN}" "dispvm"
 message "CONFIGURING ${YELLOW}${VM_VPN}"
 vm_configure "${VM_VPN}" "pvh" 176 "${VM_FW_NET}" ''
@@ -29,9 +37,12 @@ install_settings "${VM_VPN}"
 
 message "CONFIGURING ${YELLOW}dom0"
 push_files "dom0"
-add_permission "Message" "${VM_VPN}" "dom0" "allow"
-add_permission "Error" "${VM_VPN}" "dom0" "allow"
-add_permission "SplitXorg" "${VM_VPN}" "${VM_XORG}" "allow"
+if [ -n "${VPN_SSH}" ] ; then
+    setup_permissions "${VM_VPN}" xorg ssh
+fi
+if [ -n "${VPN_OVPN}" ] ; then
+    setup_permissions "${VM_VPN}" xorg file password
+fi
 add_permission "SignalVPN" "${VM_VPN}" "dom0" "allow"
 dom0_install_command lq-vpn
 # TODO This is only needed until Base is updated
@@ -56,9 +67,6 @@ if [ -n "${VPN_SSH}" ] ; then
     push_command "${VM_KEYS}" "chown user:user /home/user/.ssh/*"
     push_command "${VM_CORE}" "chmod 0600 /etc/protect/checksum.${VM_KEYS}/home/user/.ssh/*"
     push_command "${VM_CORE}" "chown user:user /etc/protect/checksum.${VM_KEYS}/home/user/.ssh/*"
-
-    message "CONFIGURING ${YELLOW}dom0${PREFIX} FOR SSH VPN"
-    add_permission "SplitSSH" "${VM_VPN}" "${VM_KEYS}" "ask,default_target=${VM_KEYS}"
 fi
 
 if [ -n "${VPN_OVPN}" ] ; then
@@ -73,10 +81,6 @@ if [ -n "${VPN_OVPN}" ] ; then
     for FILE in ./files.ovpn/*.zip ; do
         checksum_to_vm "${FILE}" "${VM_KEYS}" "/home/user/${VM_VPN}/$(basename "$FILE")"
     done
-
-    message "CONFIGURING ${YELLOW}dom0${PREFIX} FOR OPENVPN"
-    add_permission "SplitFile" "${VM_VPN}" "${VM_KEYS}" "ask,default_target=${VM_KEYS}"
-    add_permission "SplitPassword" "${VM_VPN}" "${VM_KEYS}" "ask,default_target=${VM_KEYS}"
 fi
 
 message "CUSTOMISING INSTALLATION"
