@@ -12,6 +12,8 @@ PRIVATE_DISK_MB=1024
 # Name os the LVM volume group that holds vm data
 VM_GROUP="qubes_dom0-vm"
 
+# Location for Liteqube policies. Default priority is 40 which means it overrides most settings
+LQ_POLICYFILE="/etc/qubes/policy.d/40-config-liteqube.policy"
 
 # VM NAMES & COLORS #
 #####################
@@ -113,8 +115,8 @@ vm_resize_private()
     _VRP_VM="${1}"
     _VRP_SIZE="${2}"
     if [[ -z "${_VRP_SIZE}" || "${_VRP_SIZE}" -eq 0 ]] ; then
-	message "RESIZE SKIPPED"
-	return
+    message "RESIZE SKIPPED"
+    return
     fi
     _VRP_POOL="$(qvm-volume info "${_VRP_VM}:private" | grep '^pool ' | awk '{print $2}')"
     _VRP_DRIVER="$(qvm-pool info "${_VRP_POOL}" | grep '^driver ' | awk '{print $2}')"
@@ -122,18 +124,18 @@ vm_resize_private()
     if [ x"${_VRP_DRIVER}" = x"lvm_thin" ] ; then
         message "RESIZING PRIVATE FILESYSTEM OF ${YELLOW}${_VRP_VM}"
         _VRP_PREFIX="$(qvm-volume info ${_VRP_VM}:private | grep ^vid | cut -c20- | cut -d/ -f1)"
-	_VM_LVM="${_VRP_VM//-/--}"
-	if [[ -e "/dev/mapper/${VM_GROUP}--${_VM_LVM}--private" ]] ; then
+    _VM_LVM="${_VRP_VM//-/--}"
+    if [[ -e "/dev/mapper/${VM_GROUP}--${_VM_LVM}--private" ]] ; then
             qvm-shutdown --quiet --wait --force "${_VRP_VM}"
             sudo e2fsck -fy "/dev/mapper/${VM_GROUP}--${_VM_LVM}--private"
             sudo resize2fs "/dev/mapper/${VM_GROUP}--${_VM_LVM}--private" $(( ${_VRP_SIZE}-200 ))M
             sudo lvresize -y -f "/dev/mapper/${VM_GROUP}--${_VM_LVM}--private" -L ${_VRP_SIZE}M || true
-	else
-	    message "VOLUME NOT FOUND"
-	fi
     else
-	message "RESIZE SKIPPED, UNKNOWN DRIVER ${_VRP_DRIVER}"
-	return
+        message "VOLUME NOT FOUND"
+    fi
+    else
+    message "RESIZE SKIPPED, UNKNOWN DRIVER ${_VRP_DRIVER}"
+    return
     fi
 }
 
@@ -326,7 +328,7 @@ dom0_download()
     if ! vm_exists "${VM_UPDATE}" ; then 
         message "${VM_UPDATE} does not exist yet, making a temporary one"
         _UPDATE_AUTOREMOVE="True"
-	# Not using vm_create because dvm template may lack networking configuration at this point
+    # Not using vm_create because dvm template may lack networking configuration at this point
         qvm-create --class DispVM --label "${COLOR_WORKERS}" "${VM_UPDATE}"
     fi
 
@@ -349,7 +351,7 @@ install_packages()
     shift
     # TODO: skip already installed in dom0
     if [ x"${_VM}" = x"dom0" ] ; then
-	qubes_dom0_update -y --console --no-gui $@
+    qubes_dom0_update -y --console --no-gui $@
     else
         qvm-start --quiet --skip-if-running "${_VM}"
         for _PACKAGE in $@ ; do
@@ -365,7 +367,33 @@ add_permission()
     _ADP_VM_FROM="${2}"
     _ADP_VM_TO="${3}"
     _ADP_PERMISSION="${4}"
-    add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.${_ADP_PERMISSION_NAME} * ${_ADP_VM_FROM} ${_ADP_VM_TO} ${_ADP_PERMISSION}"
+    add_line dom0 "${LQ_POLICYFILE}" "liteqube.${_ADP_PERMISSION_NAME}	*	${_ADP_VM_FROM}	${_ADP_VM_TO}	${_ADP_PERMISSION}"
+}
+
+setup_permissions()
+{
+    _SOURCE_VM="${1}"
+    shift
+    add_permission "Message" "${_SOURCE_VM}" "dom0" "allow"
+    add_permission "Error" "${_SOURCE_VM}" "dom0" "allow"
+    for _PERMISSION in $@; do
+        case "${_PERMISSION}" in
+            xorg)
+                add_permission "SplitXorg" "${_SOURCE_VM}" "${VM_XORG}" "allow" ;;
+            file)
+                add_permission "SplitFile" "${_SOURCE_VM}" "${VM_KEYS}" "allow" ;;
+            password)
+                add_permission "SplitPassword" "${_SOURCE_VM}" "dom0" "ask default_target=dom0" 
+                add_permission "SplitPassword" "${_SOURCE_VM}" "${VM_KEYS}" "ask default_target=${VM_KEYS}" ;;
+            ssh)
+                add_permission "SplitSSH" "${_SOURCE_VM}" "${VM_KEYS}" "ask default_target=${VM_KEYS}" ;;
+            gpg)
+                add_permission "SplitGPG" "${_SOURCE_VM}" "${VM_KEYS}" "ask default_target=${VM_KEYS}" ;;
+            *)
+                message "ERROR: ${_SOURCE_VM} REQUESTED UNKNOWN ${_PERMISSION}" 
+                exit 1;;
+        esac
+    done
 }
 
 vm_find_template()
