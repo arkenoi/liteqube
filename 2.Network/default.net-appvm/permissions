@@ -19,6 +19,7 @@ drwxr-xr-x	root	root	./debian-core/etc/protect/whitelist.core-net/bind-dirs/var
 drwxr-xr-x	root	root	./debian-core/etc/protect/whitelist.core-net/bind-dirs/var/lib
 drwxr-xr-x	root	root	./debian-core/etc/protect/whitelist.core-net/bind-dirs/var/lib/NetworkManager
 -rw-r--r--	root	root	./debian-core/etc/protect/whitelist.core-net/bind-dirs/var/lib/NetworkManager/.any_file
+-rwxr-xr-x	root	root	./debian-core/usr/lib/qubes/qubes-fix-nm-conf.sh
 drwxr-xr-x	root	root	./core-net/rw/bind-dirs
 drwxr-xr-x	root	root	./core-net/rw/bind-dirs/var
 drwxr-xr-x	root	root	./core-net/rw/bind-dirs/var/lib
