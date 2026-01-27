@@ -46,24 +46,24 @@ chmod +x ../.lib/lib.sh
 . ../.lib/lib.sh
 set -e
 
+vm_fail_if_missing "${VM_CORE}"
+vm_fail_if_missing "${VM_DVM}"
+vm_fail_if_missing "${VM_XORG}"
+vm_fail_if_missing "${VM_KEYS}"
 
-if ! vm_exists "${VM_CORE}" ; then
-    message "ERROR: ${YELLOW}${VM_CORE}${PREFIX} NOT FOUND, PLEASE RUN BASE INSTALL"
-    exit 1
-fi
-if ! vm_exists "${VM_DVM}" ; then
-    message "ERROR: ${YELLOW}${VM_DVM}${PREFIX} NOT FOUND, PLEASE RUN BASE INSTALL"
-    exit 1
-fi
-if ! vm_exists "${VM_XORG}" ; then
-    message "ERROR: ${YELLOW}${VM_XORG}${PREFIX} NOT FOUND, PLEASE RUN BASE INSTALL"
-    exit 1
-fi
-if ! vm_exists "${VM_KEYS}" ; then
-    message "ERROR: ${YELLOW}${VM_DVM}${PREFIX} NOT FOUND, PLEASE RUN BASE INSTALL"
-    exit 1
-fi
-
+mkdir -p /tmp/liteqube-rollback.2
+qvm-shutdown --force --wait "${VM_CORE}"
+qvm-volume config "${VM_CORE}:root" revisions_to_keep 10
+qvm-volume config "${VM_CORE}:private" revisions_to_keep 10
+message "RECORDING SNAPSHOT FOR ${YELLOW}${VM_CORE}"
+qvm-volume info "${VM_CORE}:root" revisions|tail -1 >"/tmp/liteqube-rollback.2/snapshot-${VM_CORE}-root.id"
+qvm-volume info "${VM_CORE}:private" revisions|tail -1 >"/tmp/liteqube-rollback.2/snapshot-${VM_CORE}-private.id"
+message "MAKING ${YELLOW}dom0 ${PREFIX}CONFIG BACKUPS"
+qubes-prefs --quiet --get updatevm >/tmp/liteqube-rollback.2/updatevm
+cp ${LQ_POLICYFILE} /tmp/liteqube-rollback.2/
+cp /etc/qubes/policy.d/50-config-updates.policy /tmp/liteqube-rollback.2/
+cp /etc/yum.repos.d/qubes-dom0.repo /tmp/liteqube-rollback.2
+cp /etc/dnf/dnf.conf /tmp/liteqube-rollback.2
 
 message "CONFIGURING ${YELLOW}dom0"
 push_from_dir "./default.first" "dom0"
@@ -155,38 +155,17 @@ if [ x"${USE_MIRAGE}" = x"True" ] ; then  # Mirage firewall
 
 else  # Plain linux firewall
 
-    if ! vm_exists "${VM_FW_NET}" ; then
-        message "CREATING ${YELLOW}${VM_FW_NET}"
-        qvm-create --class DispVM --template "${VM_DVM}" --label "${COLOR_WORKERS}" "${VM_FW_NET}"
-    else
-        message "VM ${YELLOW}${VM_FW_NET}${PREFIX} ALREADY EXISTS"
-    fi
-
+    vm_create "${VM_FW_NET}" "dispvm"
     vm_configure ${VM_FW_NET} pvh 384 "" ""
-    qvm-prefs --quiet --set "${VM_FW_NET}" label "${COLOR_WORKERS}"
     qvm-prefs --quiet --set "${VM_FW_NET}" provides_network True
 
-    if ! vm_exists "${VM_FW_TOR}" ; then
-        message "CREATING ${YELLOW}${VM_FW_TOR}"
-        qvm-create --class DispVM --template "${VM_DVM}" --label "${COLOR_WORKERS}" "${VM_FW_TOR}"
-    else
-        message "VM ${YELLOW}${VM_FW_TOR}${PREFIX} ALREADY EXISTS"
-    fi
-
-
+    vm_create "${VM_FW_TOR}" "dispvm"
     vm_configure ${VM_FW_TOR} pvh 384 "" ""
-    qvm-prefs --quiet --set "${VM_FW_TOR}" label "${COLOR_WORKERS}"
     qvm-prefs --quiet --set "${VM_FW_TOR}" provides_network True
 
-
     message "CONFIGURING ${YELLOW}dom0"
-    add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Message * ${VM_FW_NET} dom0 allow"
-    add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_FW_NET} dom0 allow"
-    add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.SplitXorg * ${VM_FW_NET} ${VM_XORG} allow"
-    add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Message * ${VM_FW_TOR} dom0 allow"
-    add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_FW_TOR} dom0 allow"
-    add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.SplitXorg * ${VM_FW_TOR} ${VM_XORG} allow"
-
+    setup_permissions "${VM_FW_NET}" xorg
+    setup_permissions "${VM_FW_TOR}" xorg
 
     message "CONFIGURING ${YELLOW}${VM_CORE}"
     push_from_dir "./default.fw-linux" "${VM_CORE}"
@@ -197,11 +176,11 @@ fi
 if ! vm_exists "${VM_NET}" ; then
     message "CREATING ${YELLOW}${VM_NET}"
     if [ x"${NETVM_DISPOSABLE}" = x"True" ] ; then
-        qvm-create --class DispVM --template "${VM_DVM}" --label "${COLOR_WORKERS}" "${VM_NET}"
+        vm_create "${VM_NET}" "dispvm"
     else
-        qvm-create --class AppVM --template "${VM_CORE}" --label "${COLOR_WORKERS}" "${VM_NET}"
-        VM_NET_CREATED="true"
+        vm_create "${VM_NET}" "appvm"
     fi
+    VM_NET_CREATED="true"
 else
     message "VM ${YELLOW}${VM_NET}${PREFIX} ALREADY EXISTS"
     VM_NET_CREATED="false"
@@ -249,9 +228,8 @@ if [ x"${NETVM_WIFI}" = x"True" ] ; then
     message "PRESS ENTER WHEN READY"
     read INPUT
     qvm-start --quiet --skip-if-running "${VM_KEYS}"
-    push_command "${VM_CORE}" "apt update"
+    push_command "${VM_CORE}" "apt update && apt -y upgrade"
     install_packages ${VM_CORE} python3-gi python3-dbus network-manager wpasupplicant qubes-core-agent-dom0-updates tor apt-transport-tor htpdate tinyproxy qubes-core-agent-networking ${FIRMWARE_PACKAGES}
-    push_command "${VM_CORE}" "/usr/lib/qubes/qubes-fix-nm-conf.sh"
     for FW in ./files/Firmware/* ; do
         if [ -e "${FW}" ] ; then
             NAME="$(basename "${FW}")"
@@ -266,7 +244,7 @@ if [ x"${NETVM_WIFI}" = x"True" ] ; then
         checksum_to_vm "./files/RandomSeed" "${VM_KEYS}" "/home/user/${VM_NET}/secret_key"
         push_from_dir "./default.net-dispvm" "${VM_CORE}"
         push_from_dir "./default.net-dispvm" "dom0"
-        add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.SplitFile * ${VM_NET} ${VM_KEYS} allow"
+        push_command "${VM_CORE}" "/usr/lib/qubes/qubes-fix-nm-conf.sh"
         for AP in ./files/AccessPoints/* ; do
             if [ -e "${AP}" ] ; then
                 NAME="$(basename "${AP}")"
@@ -290,6 +268,7 @@ if [ x"${NETVM_WIFI}" = x"True" ] ; then
         sha256sum -b ./files/RandomSeed | cut -d' ' -f1 > "default.net-appvm/debian-core/etc/protect/checksum.core-net/bind-dirs/var/lib/NetworkManager/secret_key"
         sha512sum -b ./files/RandomSeed | cut -d' ' -f1 >> "default.net-appvm/debian-core/etc/protect/checksum.core-net/bind-dirs/var/lib/NetworkManager/secret_key"
         push_from_dir "./default.net-appvm" "${VM_CORE}"
+        push_command "${VM_CORE}" "/usr/lib/qubes/qubes-fix-nm-conf.sh"
         qvm-start --quiet --skip-if-running "${VM_NET}"
         push_from_dir "./default.net-appvm" "${VM_NET}"
         push_command "${VM_NET}" "rm -rf /rw/QUARANTINE"
@@ -319,7 +298,7 @@ else
         push_command "${VM_NET}" "rm -rf /rw/QUARANTINE"
     fi
     message "CONFIGURING ${YELLOW}${VM_CORE} for wired network"
-    push_command "$VM_CORE" "apt update"
+    push_command "${VM_CORE}" "apt update && apt -y upgrade"
     install_packages ${VM_CORE} iproute2 libcap2-bin ifupdown2 isc-dhcp-client qubes-core-agent-networking python3-gi python3-dbus tinyproxy apt-transport-tor  qubes-core-agent-dom0-updates tor htpdate
 fi
 
@@ -357,19 +336,13 @@ qvm-shutdown --quiet --wait --force "${VM_CORE}"
 
 
 message "CONFIGURING ${YELLOW}dom0"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Message * ${VM_NET} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_NET} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.SplitXorg * ${VM_NET} ${VM_XORG} allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.SignalWifi * ${VM_NET} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Message * ${VM_TOR} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_TOR} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.SplitXorg * ${VM_TOR} ${VM_XORG} allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.SignalTor * ${VM_TOR} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.TorSetAP * ${VM_NET} ${VM_TOR} allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.WifiRequestAP * ${VM_TOR} ${VM_NET} allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Message * ${VM_UPDATE} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.Error * ${VM_UPDATE} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-config-liteqube.policy" "liteqube.SplitXorg * ${VM_UPDATE} ${VM_XORG} allow"
+setup_permissions "${VM_NET}" xorg file
+add_permission "SignalWifi" "${VM_NET}" "dom0" "allow"
+setup_permissions "${VM_TOR}" xorg
+add_permission "SignalTor" "${VM_TOR}" "dom0" "allow"
+add_permission "TorSetAP" "${VM_NET}" "${VM_TOR}" "allow"
+add_permission "WiFiRequesttAP" "${VM_TOR}" "${VM_NET}" "allow"
+setup_permissions "${VM_UPDATE}" xorg
 dom0_command lq-connect
 
 
@@ -436,22 +409,16 @@ if vm_exists "${SYS_WHONIX}" ; then
     qvm-prefs --default "${SYS_WHONIX}" autostart
 fi
 
-
-if ! vm_exists "${VM_UPDATE}" ; then
-    message "CREATING ${YELLOW}${VM_UPDATE}"
-    qvm-create --class DispVM --template "${VM_DVM}" --label "${COLOR_WORKERS}" "${VM_UPDATE}"
-else
-    message "VM ${YELLOW}${VM_UPDATE}${PREFIX} ALREADY EXISTS"
-fi
-
-
+vm_create ${VM_UPDATE} dispvm
 vm_configure ${VM_UPDATE} pvh 4096 ${VM_FW_TOR} ""
 qvm-prefs --quiet --set "${VM_UPDATE}" vcpus 2
+# Stupid but this is to keep qubes-global-config happy
+qvm-prefs --quiet --set "${VM_UPDATE}" provides_network True
 
 message "CONFIGURING ${YELLOW}dom0"
-sudo touch "/etc/qubes/policy.d/50-config-updates.policy"
-add_line dom0 "/etc/qubes/policy.d/50-config-updates.policy" "qubes.UpdatesProxy * @type:TemplateVM @default allow,target=${VM_UPDATE}"
-add_line dom0 "/etc/qubes/policy.d/50-config-updates.policy" "qubes.UpdatesProxy * @anyvm @anyvm deny"
+> "/etc/qubes/policy.d/50-config-updates.policy"
+add_line dom0 "/etc/qubes/policy.d/50-config-updates.policy" "qubes.UpdatesProxy	*	@tag:whonix-updatevm	@default	allow target=${VM_UPDATE}"
+add_line dom0 "/etc/qubes/policy.d/50-config-updates.policy" "qubes.UpdatesProxy	*	@type:TemplateVM	@default	allow target=${VM_UPDATE}"
 
 
 message "SHUTTING DOWN NETWORK QUBES"
@@ -480,6 +447,7 @@ push_from_dir "./default.torify" "dom0"
 message "TORIFYING ${YELLOW}${VM_CORE}${PREFIX} UPDATES"
 qvm-start --quiet --skip-if-running "${VM_CORE}"
 sleep 3
+push_command "${VM_CORE}" "rm /etc/apt/sources.list.d/qubes-r4.list"
 push_from_dir "./default.torify" "${VM_CORE}"
 IP="$(qvm-prefs ${VM_TOR} | grep '^ip ' | cut -c26-)"
 replace_text "${VM_CORE}" "/etc/tor/torrc" "512.512.512.512" "${IP}"
@@ -527,7 +495,8 @@ fi
 qvm-prefs --quiet --set "${VM_NET}" memory "${NET_VM_MEMORY}"
 qvm-prefs --quiet --set "${VM_TOR}" memory "${TOR_VM_MEMORY}"
 qvm-start --quiet --skip-if-running "${VM_NET}"
-qvm-start --quiet --skip-if-running "${FW_FW_NET}"
+sleep 2
+qvm-start --quiet --skip-if-running "${VM_FW_NET}"
 
 
 # TODO recover Tor connection after sleep (adjust time)
