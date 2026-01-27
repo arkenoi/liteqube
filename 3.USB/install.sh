@@ -37,29 +37,23 @@ chmod +x ../.lib/lib.sh
 . ../.lib/lib.sh
 set -e
 
+vm_fail_if_missing "${VM_CORE}"
+vm_fail_if_missing "${VM_DVM}"
+vm_fail_if_missing "${VM_XORG}"
 
-if ! vm_exists "${VM_CORE}" ; then
-    message "ERROR: ${YELLOW}${VM_CORE}${PREFIX} NOT FOUND"
-    exit 1
-fi
-if ! vm_exists "${VM_DVM}" ; then
-    message "ERROR: ${YELLOW}${VM_DVM}${PREFIX} NOT FOUND"
-    exit 1
-fi
-if ! vm_exists "${VM_XORG}" ; then
-    message "ERROR: ${YELLOW}${VM_XORG}${PREFIX} NOT FOUND, PLEASE RUN BASE INSTALL"
-    exit 1
-fi
+mkdir -p /tmp/liteqube-rollback.3
+qvm-shutdown --force --wait "${VM_CORE}"
+qvm-volume config "${VM_CORE}:root" revisions_to_keep 10
+qvm-volume config "${VM_CORE}:private" revisions_to_keep 10
+message "RECORDING SNAPSHOT FOR ${YELLOW}${VM_CORE}"
+qvm-volume info "${VM_CORE}:root" revisions|tail -1 >"/tmp/liteqube-rollback.3/snapshot-${VM_CORE}-root.id"
+qvm-volume info "${VM_CORE}:private" revisions|tail -1 >"/tmp/liteqube-rollback.3/snapshot-${VM_CORE}-private.id"
+message "MAKING ${YELLOW}dom0${PREFIX} CONFIG BACKUPS"
+cp /etc/qubes/policy.d/50-config-input.policy /tmp/liteqube-rollback.3/
+cp /etc/qubes/policy.d/50-config-u2f.policy /tmp/liteqube-rollback.3/
+cp ${LQ_POLICYFILE} /tmp/liteqube-rollback.3/
 
-
-if ! vm_exists "${VM_USB}" ; then
-    message "CREATING ${YELLOW}${VM_USB}"
-    qvm-create --class DispVM --template "${VM_DVM}" --label "${COLOR_WORKERS}" "${VM_USB}"
-else
-    message "VM ${YELLOW}${VM_USB}${PREFIX} ALREADY EXISTS"
-fi
-
-
+vm_create "${VM_USB}" dispvm
 vm_configure ${VM_USB} hvm ${USB_VM_MEMORY} '' '' ''
 
 message "STARTING ${YELLOW}${VM_CORE}"
@@ -80,10 +74,8 @@ done
 message "CONFIGURING ${YELLOW}dom0"
 push_files "dom0"
 sudo qubes-dom0-update -y --console --show-output qubes-usb-proxy-dom0
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Message * ${VM_USB} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.Error * ${VM_USB} dom0 allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.SplitXorg * ${VM_USB} ${VM_XORG} allow"
-add_line dom0 "/etc/qubes/policy.d/50-liteqube.policy" "liteqube.SignalStorage * ${VM_USB} dom0 allow"
+setup_permissions "${VM_USB}" xorg
+add_permission "SignalStorage" "${VM_USB}" "dom0" "allow"
 
 if [ x"${USB_INPUT_DEVICES}" = x"True" ] ; then
     message "CONFIGURING USB INPUT IN ${YELLOW}${VM_CORE}"
@@ -111,7 +103,7 @@ if [ x"${USB_SMARTCARD}" = x"True" ] ; then
     push_command "${VM_CORE}" "systemctl enable pcscd.service" 
     qvm-service -e ${VM_SC} liteqube-pkcs11
     for VM in ${QUBES_SMARTCARD_CLIENTS} ; do
-   	add_permission "pkcs11" "${VM}" "${VM_SC}" "allow,target=${VM_SC}"
+   	add_permission "pkcs11" "${VM}" "${VM_SC}" "allow target=${VM_SC}"
     done
     message "INSTALLING ${YELLOW}p11-kit${PREFIX} TO TEMPLATES"
     sed -e "s/TARGET/${VM_SC}/" <"./files/remote-pkcs11.module.in" >"./files/remote-pkcs11.module"
@@ -188,7 +180,11 @@ else
     fi
 fi
 
-replace_text dom0 "/etc/qubes/policy.d/50-config-input.policy" "${SYS_USB}" "${VM_USB}" 
+if [ -e "/etc/qubes/policy.d/50-config-input.policy" ] ; then
+    replace_text dom0 "/etc/qubes/policy.d/50-config-input.policy" "${SYS_USB}" "${VM_USB}" 
+else
+    message "Input policy file not found!"
+fi
 if [ -e "/etc/qubes/policy.d/50-config-u2f.policy" ] ; then
     replace_text dom0 "/etc/qubes/policy.d/50-config-u2f.policy" "${SYS_USB}" "${VM_USB}"
 else
