@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Report volume and mute state of the default sink to dom0 (liteqube.SignalSound, "U50" / "M50").
+# Every change in the PipeWire graph re-reads the default sink; unchanged states are not re-sent.
+
+# PipeWire runs in the systemd user instance of 'user', its sockets live here
+export XDG_RUNTIME_DIR="/run/user/1000"
+export LC_ALL=C
+
+SINK="@DEFAULT_AUDIO_SINK@"
+LAST_REPORT=""
+
+report_volume()
+{
+    # wpctl prints "Volume: 0.50" or "Volume: 0.50 [MUTED]"
+    STATUS="$(wpctl get-volume "${SINK}" 2>/dev/null)" || return 0
+    VOLUME="$(echo "${STATUS}" | awk '{ printf "%d", $2 * 100 + 0.5 }')"
+    case "${STATUS}" in
+        *MUTED*) REPORT="M${VOLUME}" ;;
+        *)       REPORT="U${VOLUME}" ;;
+    esac
+    [ x"${REPORT}" = x"${LAST_REPORT}" ] && return 0
+    LAST_REPORT="${REPORT}"
+    qrexec-client-vm dom0 "liteqube.SignalSound+${REPORT}"
+}
+
+report_volume
+( pw-mon --no-colors --hide-props --hide-params 2>/dev/null || pw-mon --no-colors 2>/dev/null ) | while read -r LINE ; do
+    case "${LINE}" in
+        changed:*|added:*|removed:*)
+            report_volume ;;
+    esac
+done

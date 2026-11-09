@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Set pulseaudio volume for the default sink. $1 can be one of:
+# Set the volume of the default PipeWire sink. $1 can be one of:
 #   'MUTE' to mute
 #   'UNMUTE' to unmute
 #   'UP' to increase volume by 5%, rounded down to %5 and not above 100%
@@ -8,35 +8,47 @@
 #   'NOOP' to just report current volume
 #   NUM in the range of 5-100 to set volume to NUM%;
 
-unset DBUS_SESSION_BUS_ADDRESS
-unset XDG_RUNTIME_DIR
+# PipeWire runs in the systemd user instance of 'user', its sockets live here
+export XDG_RUNTIME_DIR="/run/user/1000"
+export LC_ALL=C
 
-SINK="$(pacmd stat | grep 'Default sink name' | cut -d' ' -f 4)"
-VOLUME="$(pacmd list-sinks | awk '/^\s+name: /{indefault = $2 =="<'"${SINK}"'>"}/^\s+volume: / && indefault {print $5; exit}' | cut -d'%' -f1)"
+SINK="@DEFAULT_AUDIO_SINK@"
+
+# Right after boot WirePlumber may still be probing the hardware
+for _TRY in 1 2 3 4 5 6 7 8 9 10 ; do
+    wpctl get-volume "${SINK}" >/dev/null 2>&1 && break
+    sleep 1
+done
+
+# wpctl prints "Volume: 0.50" or "Volume: 0.50 [MUTED]"
+STATUS="$(wpctl get-volume "${SINK}" 2>/dev/null)" || STATUS="Volume: 0.00"
+VOLUME="$(echo "${STATUS}" | awk '{ printf "%d", $2 * 100 + 0.5 }')"
+case "${STATUS}" in
+    *MUTED*) MUTED="yes" ;;
+    *)       MUTED="no" ;;
+esac
 
 case "${1}" in
     MUTE)
-        pacmd set-sink-mute "${SINK}" 1
+        wpctl set-mute "${SINK}" 1
         ;;
     UNMUTE)
-        pacmd set-sink-mute "${SINK}" 0
+        wpctl set-mute "${SINK}" 0
         ;;
     UP)
         NEW_VOLUME="$(( VOLUME + 5 ))"
         NEW_VOLUME="$(( NEW_VOLUME / 5 * 5 ))"
         [ "${NEW_VOLUME}" -gt 100 ] && NEW_VOLUME=100
-        pacmd set-sink-volume "${SINK}" "$(( NEW_VOLUME * 65536 / 100 ))"
+        wpctl set-volume -l 1.0 "${SINK}" "${NEW_VOLUME}%"
         ;;
     DOWN)
         NEW_VOLUME="$(( VOLUME - 5 ))"
         NEW_VOLUME="$(( NEW_VOLUME / 5 * 5 ))"
         [ "${NEW_VOLUME}" -lt 5 ] && NEW_VOLUME=5
-        pacmd set-sink-volume "${SINK}" "$(( NEW_VOLUME * 65536 / 100 ))"
+        wpctl set-volume -l 1.0 "${SINK}" "${NEW_VOLUME}%"
         ;;
     NOOP)
-        VOLUME="$(pacmd list-sinks | awk '/^\s+name: /{indefault = $2 =="<'"${SINK}"'>"}/^\s+volume: / && indefault {print $5; exit}' | cut -d'%' -f1)"
-        MUTE="$(pacmd list-sinks | awk '/^\s+name: /{indefault = $2 =="<'"${SINK}"'>"}/^\s+muted: / && indefault {print $2; exit}')"
-        [ x"${MUTE}" = x"yes" ] && REPORT="M${VOLUME}" || REPORT="U${VOLUME}"
+        [ x"${MUTED}" = x"yes" ] && REPORT="M${VOLUME}" || REPORT="U${VOLUME}"
         qrexec-client-vm dom0 "liteqube.SignalSound+${REPORT}"
         ;;
     *)
@@ -44,7 +56,7 @@ case "${1}" in
             NEW_VOLUME="${1}"
             [ "${NEW_VOLUME}" -gt 100 ] && NEW_VOLUME=100
             [ "${NEW_VOLUME}" -lt 5 ] && NEW_VOLUME=5
-            pacmd set-sink-volume "${SINK}" "$(( NEW_VOLUME * 65536 / 100 ))"
+            wpctl set-volume -l 1.0 "${SINK}" "${NEW_VOLUME}%"
         else
             echo "Unknown command: ${1}" >&2
             exit 1

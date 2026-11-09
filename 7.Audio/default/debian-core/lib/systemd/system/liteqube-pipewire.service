@@ -1,0 +1,13 @@
+[Unit]
+Description=PipeWire sound stack in the systemd user instance of 'user'
+# user@1000 stops itself when nothing needs it; this unit keeps it, and PipeWire in it, alive
+Requires=user@1000.service
+After=user@1000.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=user
+Group=user
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+ExecStart=/usr/bin/systemctl --user start pipewire.service wireplumber.service pipewire-pulse.service

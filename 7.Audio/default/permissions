@@ -5,10 +5,10 @@ drwxr-xr-x	root	root	./debian-core/etc/protect/template.core-sound/config
 -rwxr-xr-x	root	root	./debian-core/etc/protect/template.core-sound/config/rc.local
 drwxrwsr-x	root	root	./debian-core/etc/protect/template.core-sound/usrlocal
 drwxrwsr-x	root	root	./debian-core/etc/protect/template.core-sound/usrlocal/bin
--rwxr-xr-x	root	root	./debian-core/etc/protect/template.core-sound/usrlocal/bin/liteqube-pulseaudio-daemon
--rwxr-xr-x	root	root	./debian-core/etc/protect/template.core-sound/usrlocal/bin/liteqube-pulseaudio-monitor
+-rwxr-xr-x	root	root	./debian-core/etc/protect/template.core-sound/usrlocal/bin/liteqube-sound-daemon
+-rwxr-xr-x	root	root	./debian-core/etc/protect/template.core-sound/usrlocal/bin/liteqube-sound-monitor
 -rwxr-xr-x	root	root	./debian-core/etc/qubes-rpc/liteqube.SoundVolume
--rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-pulseaudio-hardware.service
--rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-pulseaudio-daemon.service
--rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-pulseaudio-monitor.service
+-rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-pipewire.service
+-rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-sound-daemon.service
+-rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-sound-monitor.service
 -rwxr-xr-x	root	root	./dom0/etc/qubes-rpc/liteqube.SignalSound

@@ -17,8 +17,14 @@ message "CLEANUP ${YELLOW}${VM_CORE}"
 push_command "${VM_CORE}" "rm -rf /etc/protect/template.${VM_AUDIO} 2>/dev/null 1>&2"
 push_command "${VM_CORE}" "rm /etc/modprobe.d/liteqube-sound.conf 2>/dev/null 1>&2"
 push_command "${VM_CORE}" "rm /etc/qubes-rpc/liteqube.SoundVolume 2>/dev/null 1>&2"
-push_command "${VM_CORE}" "rm /lib/systemd/system/liteqube-pulseaudio-*.service 2>/dev/null 1>&2"
-push_command "${VM_CORE}" "apt-get -q -y purge --autoremove pulseaudio pulsemixer qubes-gui-daemon-pulseaudio"
+push_command "${VM_CORE}" "rm -f /lib/systemd/system/liteqube-pulseaudio-*.service /lib/systemd/system/liteqube-sound-*.service 2>/dev/null 1>&2"
+if vm_exists "${VM_RDP}" ; then
+    message "${VM_RDP} STILL USES PIPEWIRE, KEEPING ITS PACKAGES AND liteqube-pipewire.service"
+    push_command "${VM_CORE}" "apt-get -q -y purge --autoremove pulsemixer qubes-audio-daemon"
+else
+    push_command "${VM_CORE}" "rm -f /lib/systemd/system/liteqube-pipewire.service 2>/dev/null 1>&2"
+    push_command "${VM_CORE}" "apt-get -q -y purge --autoremove pipewire pipewire-pulse wireplumber pulsemixer qubes-audio-daemon"
+fi
 qvm-shutdown --quiet --wait --force "${VM_CORE}" 2>/dev/null
 
 message "CLEANUP ${YELLOW}dom0"
