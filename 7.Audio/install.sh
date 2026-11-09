@@ -23,7 +23,9 @@ qvm-prefs --set "${VM_AUDIO}" autostart True
 
 
 message "CONFIGURING ${YELLOW}${VM_CORE}"
-install_packages "${VM_CORE}" pipewire-qubes pulsemixer qubes-gui-daemon-pulseaudio
+# core-sound runs PipeWire in the systemd user instance of 'user' (see liteqube-pipewire.service).
+# pacat-simple-vchan (qubes-audio-daemon) reaches it through pipewire-pulse, the Liteqube scripts use wpctl/pw-mon.
+install_packages "${VM_CORE}" pipewire pipewire-pulse wireplumber pulsemixer qubes-audio-daemon ${AUDIO_FIRMWARE_PACKAGES}
 push_files "${VM_CORE}"
 push_command "${VM_CORE}" "adduser user audio 2>/dev/null 1>&2"
 install_settings "${VM_AUDIO}"

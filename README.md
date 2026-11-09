@@ -136,7 +136,8 @@ In addition, core-iscsi qube can be created, allowing to use NAS for data storag
 Disposable VM to run remote desktop sessions. RDP (full support, including sound) and VNC (experimental) are currently supported. Passwords are obtained from core-keys.
 
 ### Audio
-This creates audio qube called core-sound, that can then be set as audiovm for other qubes.  It generally follows Qubes approach to audio service provisioning, except using tiny custom shell script to run `pacat-simple-vchan` for each qube requiring sound service instead of default monstrous python script with runtime x.org dependency. `lq-volume` script is provided in dom0 to fine-tune pulseaudio volume.
+This creates audio qube called core-sound, that can then be set as audiovm for other qubes.  It generally follows Qubes approach to audio service provisioning, except using tiny custom shell script to run `pacat-simple-vchan` for each qube requiring sound service instead of default monstrous python script with runtime x.org dependency. `lq-volume` script is provided in dom0 to fine-tune the volume.
+core-sound runs PipeWire (with WirePlumber and pipewire-pulse) inside the systemd user instance of `user`, kept alive by the `liteqube-pipewire` system service; `pacat-simple-vchan` connects through pipewire-pulse and the volume scripts use `wpctl`. If your sound hardware needs firmware (Intel SOF on recent laptops, for example), list the package in `AUDIO_FIRMWARE_PACKAGES` in `7.Audio/settings-installer.sh`.
 
 ### Print
 Creates printing qube called core-print. This qube has two modes of operation, with and without preview of file to be printed:

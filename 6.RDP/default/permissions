@@ -9,3 +9,4 @@ drwxrwsr-x	root	root	./debian-core/etc/protect/template.core-rdp/usrlocal
 drwxrwsr-x	root	root	./debian-core/etc/protect/template.core-rdp/usrlocal/bin
 -rwxr-xr-x	root	root	./debian-core/etc/protect/template.core-rdp/usrlocal/bin/liteqube-shutdown-inactive
 -rwxr-xr-x	root	root	./debian-core/etc/qubes-rpc/liteqube.RDP
+-rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-pipewire.service

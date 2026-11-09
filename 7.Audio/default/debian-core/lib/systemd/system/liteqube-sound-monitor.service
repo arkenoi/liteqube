@@ -1,0 +1,15 @@
+[Unit]
+Description=Monitor and report to dom0 volume changes on the default sink
+Requires=liteqube-pipewire.service
+After=liteqube-pipewire.service
+
+[Service]
+Type=simple
+User=user
+Group=user
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+StandardOutput=journal
+StandardError=journal
+ExecStart=/usr/local/bin/liteqube-sound-monitor
+Restart=always
+RestartSec=10

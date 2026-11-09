@@ -8,3 +8,7 @@ AUDIO_NO_STRICT_RESET="True"
 
 # Qube that currently provides audio service
 ORIGINAL_VM_AUDIO="dom0"
+
+# Space-separated list of firmware packages your sound hardware needs, e.g. "firmware-sof-signed"
+# for Intel laptops from Tiger Lake on. Leave empty if the card works without extra firmware.
+AUDIO_FIRMWARE_PACKAGES=""

@@ -1,12 +1,15 @@
 [Unit]
 Description=Fire pacat-simple-vchan for each qube that can play sound
+Requires=liteqube-pipewire.service
+After=liteqube-pipewire.service
 
 [Service]
 Type=simple
 User=user
 Group=user
+Environment=XDG_RUNTIME_DIR=/run/user/1000
 StandardOutput=journal
 StandardError=journal
-ExecStart=/usr/local/bin/liteqube-pulseaudio-daemon
+ExecStart=/usr/local/bin/liteqube-sound-daemon
 Restart=always
 RestartSec=10

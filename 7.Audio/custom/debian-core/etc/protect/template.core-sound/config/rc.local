@@ -1,8 +1,8 @@
 #!/bin/sh
 
-systemctl start liteqube-pulseaudio-hardware
-systemctl start liteqube-pulseaudio-daemon
-systemctl start liteqube-pulseaudio-monitor
+systemctl start liteqube-pipewire
+systemctl start liteqube-sound-daemon
+systemctl start liteqube-sound-monitor
 
 sleep 3
 [ -x "/rw/config/liteqube-settings" ] && . /rw/config/liteqube-settings
