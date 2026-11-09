@@ -137,6 +137,7 @@ Disposable VM to run remote desktop sessions. RDP (full support, including sound
 
 ### Audio
 This creates audio qube called core-sound, that can then be set as audiovm for other qubes.  It generally follows Qubes approach to audio service provisioning, except using tiny custom shell script to run `pacat-simple-vchan` for each qube requiring sound service instead of default monstrous python script with runtime x.org dependency. `lq-volume` script is provided in dom0 to fine-tune pulseaudio volume.
+core-sound runs PulseAudio as its sound server; client qubes may use either `pulseaudio-qubes` or `pipewire-qubes`, the vchan protocol between them and `pacat-simple-vchan` is the same.
 
 ### Print
 Creates printing qube called core-print. This qube has two modes of operation, with and without preview of file to be printed:

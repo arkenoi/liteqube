@@ -18,7 +18,7 @@ push_command "${VM_CORE}" "rm -rf /etc/protect/template.${VM_AUDIO} 2>/dev/null 
 push_command "${VM_CORE}" "rm /etc/modprobe.d/liteqube-sound.conf 2>/dev/null 1>&2"
 push_command "${VM_CORE}" "rm /etc/qubes-rpc/liteqube.SoundVolume 2>/dev/null 1>&2"
 push_command "${VM_CORE}" "rm /lib/systemd/system/liteqube-pulseaudio-*.service 2>/dev/null 1>&2"
-push_command "${VM_CORE}" "aptitude -q -y purge pulseaudio pulsemixer qubes-gui-daemon-pulseaudio"
+push_command "${VM_CORE}" "aptitude -q -y purge pulseaudio pulsemixer qubes-audio-daemon qubes-gui-daemon-pulseaudio"
 qvm-shutdown --quiet --wait --force "${VM_CORE}" 2>/dev/null
 
 message "CLEANUP ${YELLOW}dom0"

@@ -23,7 +23,9 @@ qvm-prefs --set "${VM_AUDIO}" autostart True
 
 
 message "CONFIGURING ${YELLOW}${VM_CORE}"
-install_packages "${VM_CORE}" pipewire-qubes pulsemixer qubes-gui-daemon-pulseaudio
+# core-sound runs PulseAudio as its sound server (the scripts below drive it with pacmd/pactl).
+# The client-side module (pipewire-qubes) is installed by the components whose qubes play sound.
+install_packages "${VM_CORE}" pulseaudio pulsemixer qubes-audio-daemon
 push_files "${VM_CORE}"
 push_command "${VM_CORE}" "adduser user audio 2>/dev/null 1>&2"
 install_settings "${VM_AUDIO}"
