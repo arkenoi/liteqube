@@ -40,7 +40,8 @@ message "CONFIGURING ${YELLOW}${VM_CORE}"
 qvm-start --quiet --skip-if-running "${VM_CORE}"
 add_line "${VM_CORE}" "/etc/hosts" "127.0.1.1       ${VM_RDP}"
 push_files "${VM_CORE}"
-install_packages "${VM_CORE}" ${REMOTE_APPS} pipewire-qubes
+# the RDP client plays through pipewire-pulse; pipewire-qubes forwards the sound to core-sound (audiovm)
+install_packages "${VM_CORE}" ${REMOTE_APPS} pipewire pipewire-pulse wireplumber pipewire-qubes
 
 message "CONFIGURING ${YELLOW}dom0"
 setup_permissions "${VM_RDP}" xorg password ssh

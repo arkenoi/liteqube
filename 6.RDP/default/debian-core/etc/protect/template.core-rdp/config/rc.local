@@ -20,4 +20,4 @@ echo "nameserver ${NS1}${RETURN}nameserver ${NS2}" > /run/resolv.conf
 #/bin/systemctl enable qubes-network
 /bin/systemctl start qubes-network
 
-sudo -u user pulseaudio --start -n --file=/etc/pulse/qubes-default.pa --exit-idle-time=-1
+/bin/systemctl start liteqube-pipewire
