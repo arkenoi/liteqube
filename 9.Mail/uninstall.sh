@@ -15,7 +15,7 @@ push_command "${VM_CORE}" "rm -rf /etc/protect/template.${VM_GETMAIL} 2>/dev/nul
 push_command "${VM_CORE}" "rm -rf /etc/protect/template.${VM_SENDMAIL} 2>/dev/null 1>&2"
 push_command "${VM_CORE}" "rm -rf /etc/protect/whitelist.${VM_GETMAIL} 2>/dev/null 1>&2"
 push_command "${VM_CORE}" "rm -rf /etc/protect/whitelist.${VM_SENDMAIL} 2>/dev/null 1>&2"
-push_command "${VM_CORE}" "aptitude -q -y purge getmail msmtp"
+push_command "${VM_CORE}" "aptitude -q -y purge getmail6 msmtp"
 qvm-shutdown --quiet --wait --force "${VM_CORE}" 2>/dev/null
 
 message "CLEANUP ${YELLOW}${MAIL_QUBE}"
