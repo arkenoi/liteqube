@@ -25,7 +25,7 @@ cp ${LQ_POLICYFILE} /tmp/liteqube-rollback.9/
 message "CONFIGURING ${YELLOW}${VM_CORE}"
 qvm-start --quiet --skip-if-running "${VM_CORE}"
 push_files "${VM_CORE}"
-install_packages "${VM_CORE}" getmail msmtp
+install_packages "${VM_CORE}" getmail6 msmtp
 add_line "${VM_CORE}" "/etc/hosts" "127.0.0.1 ${VM_GETMAIL}"
 add_line "${VM_CORE}" "/etc/hosts" "127.0.0.1 ${VM_SENDMAIL}"
 qvm-shutdown --quiet --wait --force "${VM_CORE}"
