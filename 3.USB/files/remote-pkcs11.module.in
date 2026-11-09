@@ -1,4 +1,5 @@
 module: p11-kit-client.so
 
-remote: |/bin/sh -c "test -f /var/run/qubes-service/remote-pkcs11 && /usr/bin/qrexec-client-vm TARGET liteqube.pkcs11"
-
+# The argument tells core-usb which p11-kit RPC dialect this qube speaks (p11-glue/p11-kit#733);
+# liteqube.pkcs11 answers with a server build of the same family.
+remote: |/bin/sh -c "test -f /var/run/qubes-service/remote-pkcs11 || exit 1 ; V=$(/usr/bin/p11-kit --version 2>/dev/null) ; exec /usr/bin/qrexec-client-vm TARGET liteqube.pkcs11+${V##* }"

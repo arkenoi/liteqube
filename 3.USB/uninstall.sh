@@ -5,6 +5,7 @@ chmod +x ../.lib/lib.sh
 SYS_USB="sys-usb"
 
 qvm-shutdown --quiet --wait --force "${VM_USB}"
+push_command "${VM_CORE}" "rm -rf /opt/liteqube/p11-kit-*"
 qvm-shutdown --quiet --wait --force "${VM_CORE}"
 
 qvm-start --quiet --skip-if-running "${SYS_USB}"

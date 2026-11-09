@@ -1,2 +1,34 @@
 #!/bin/sh
-/usr/bin/p11-kit remote /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so
+
+# Serve opensc's PKCS#11 module to the calling qube over p11-kit RPC.
+#
+# p11-kit 0.25.6 changed the CK_MECHANISM wire encoding without negotiating it (p11-glue/p11-kit#733):
+# a client and a server from different sides of that release connect, log in and list objects, then fail
+# at the first call carrying a mechanism. The client sends its p11-kit version as the service argument
+# (see remote-pkcs11.module). When it is on the same side as the system p11-kit, the system one serves;
+# otherwise a build unpacked under /opt/liteqube/p11-kit-<version> by 3.USB/install.sh does. No argument,
+# or no matching build: system p11-kit.
+
+MODULE="/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so"
+EXTRA_DIR="/opt/liteqube"
+CLIENT_VERSION="${1}"
+
+# "old" encoding before 0.25.6, "new" from 0.25.6 on
+encoding()
+{
+    if dpkg --compare-versions "${1}" lt 0.25.6 ; then echo old ; else echo new ; fi
+}
+
+SYSTEM_VERSION="$(/usr/bin/p11-kit --version 2>/dev/null | cut -d' ' -f2)"
+
+if [ -n "${CLIENT_VERSION}" ] && [ -n "${SYSTEM_VERSION}" ] && [ "$(encoding "${CLIENT_VERSION}")" != "$(encoding "${SYSTEM_VERSION}")" ] ; then
+    for DIR in "${EXTRA_DIR}"/p11-kit-* ; do
+        [ -x "${DIR}/usr/libexec/p11-kit/p11-kit-remote" ] || continue
+        [ "$(encoding "${DIR##*/p11-kit-}")" = "$(encoding "${CLIENT_VERSION}")" ] || continue
+        # 'p11-kit remote' would exec the helper at its compiled-in /usr/libexec path, so run this build's helper directly
+        LD_LIBRARY_PATH="${DIR}/usr/lib/x86_64-linux-gnu" exec "${DIR}/usr/libexec/p11-kit/p11-kit-remote" "${MODULE}"
+    done
+    echo "liteqube.pkcs11: no p11-kit build matching client ${CLIENT_VERSION} under ${EXTRA_DIR}, using system ${SYSTEM_VERSION}" >&2
+fi
+
+exec /usr/bin/p11-kit remote "${MODULE}"
