@@ -50,7 +50,7 @@ dom0_install_command lq-addkey
 
 if [ -n "${VPN_SSH}" ] ; then
     message "CONFIGURING ${YELLOW}${VM_CORE}${PREFIX} FOR SSH VPN"
-    push_command "${VM_CORE}" "apt-get -q -y install redsocks net-tools dnscrypt-proxy"
+    push_command "${VM_CORE}" "apt-get -q -y install redsocks dnscrypt-proxy"
     push_from_dir "./default.ssh" "${VM_CORE}"
 
     message "PUSHING SSH FILES TO ${YELLOW}${VM_KEYS}"

@@ -15,6 +15,9 @@ USB_SMARTCARD="True"
 # so we fall back to ugly socket forwarding
 PKCS11_SOCKET="True"
 
+# Set to "True" to install smartcard diagnostic tools (opensc-tool, pkcs11-tool, p11tool)
+#USB_DEBUG="True"
+
 # sys-usb vm name
 SYS_USB="sys-usb"
 
@@ -97,7 +100,10 @@ done
 if [ x"${USB_SMARTCARD}" = x"True" ] ; then
     vm_exists "${VM_SC}" || ( vm_create "${VM_SC}" "dispvm" && vm_configure "${VM_SC}" "pvh" 256 '' '' )
     vm_fail_if_missing "${VM_SC}"
-    install_packages "${VM_CORE}" p11-kit pcscd opensc opensc-pkcs11 gnutls-bin python3-fido2 qubes-ctap
+    install_packages "${VM_CORE}" p11-kit pcscd opensc-pkcs11 python3-fido2 qubes-ctap
+    if [ x"${USB_DEBUG}" = x"True" ] ; then
+        install_packages "${VM_CORE}" opensc gnutls-bin
+    fi
     add_line "${VM_CORE}" "/usr/lib/systemd/system/pcscd.service" "WantedBy=smartcard.target"
     push_command "${VM_CORE}" "systemctl daemon-reload" 
     push_command "${VM_CORE}" "systemctl enable pcscd.service" 

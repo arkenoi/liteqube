@@ -35,7 +35,7 @@ ssh_start() (
     /usr/bin/sudo -u user SSH_AUTH_SOCK=/home/user/.ssh/ssh-agent-core-keys /usr/bin/ssh ${SSH_COMMANDLINE} &
     for SSH_DELAY in 10 10 5 5 5 5 5 3 3 3 3 3 0 ; do
         sleep "${SSH_DELAY}"
-        /usr/bin/netstat -pntl | grep 1080 >/dev/null 2>&1 && break
+        /usr/bin/ss -Hntl 'sport = :1080' | grep -q . && break
         [ "${SSH_DELAY}" = "0" ] || continue
         /bin/ps hww -C ssh -o pid:1,args:1 | /bin/grep "${SSH_COMMANDLINE}" | /bin/cut -d' ' -f1 | /bin/xargs -r kill
         /bin/systemctl stop liteqube-split-ssh.socket
@@ -93,7 +93,7 @@ ssh_start() (
     iptables -I INPUT -p icmp -j DROP
     [ -z "${SSH_DNS}" ] || iptables -I FORWARD -j REJECT --reject-with icmp-admin-prohibited
 
-    while /usr/bin/netstat -pntl | grep 1080 >/dev/null 2>&1; do
+    while /usr/bin/ss -Hntl 'sport = :1080' | grep -q . ; do
         sleep 3;
     done
 )

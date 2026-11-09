@@ -95,8 +95,6 @@ drwxr-xr-x	root	root	./debian-core/etc/X11
 -rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-split-xorg@.service
 -rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-split-xorg.socket
 -rw-r--r--	root	root	./debian-core/lib/systemd/system/liteqube-vm-template.service
-drwxr-x---	root	root	./debian-core/root/.aptitude
--rw-rw----	root	root	./debian-core/root/.aptitude/config
 lrwxrwxrwx	root	root	./debian-core/root/.bash_profile
 -rw-r-----	root	root	./debian-core/root/.bashrc
 lrwxrwxrwx	user	user	./debian-core/root/.cache

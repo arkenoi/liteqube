@@ -463,8 +463,8 @@ qvm-start --quiet --skip-if-running "${VM_NET}"
 sleep 60
 qvm-start --quiet --skip-if-running "${VM_CORE}"
 sleep 3
-push_command "${VM_CORE}" "aptitude update" || true
-push_command "${VM_CORE}" "aptitude update" || true
+push_command "${VM_CORE}" "apt-get -q update" || true
+push_command "${VM_CORE}" "apt-get -q update" || true
 push_command "${VM_TOR}" "rm -rf /rw/QUARANTINE"
 
 qvm-service --enable whonix-workstation-18 skip-torified-updates-proxy-check

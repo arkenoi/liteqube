@@ -34,7 +34,7 @@ message "MAKING ${YELLOW}dom0${PREFIX} CONFIG BACKUPS"
 cp ${LQ_POLICYFILE} /tmp/liteqube-rollback.8/
 
 message "CONFIGURING ${YELLOW}${VM_CORE}"
-install_packages "${VM_CORE}" cups qubes-usb-proxy "${PDF_PREVIEW}" ${PRINTER_DRIVERS}
+install_packages "${VM_CORE}" cups qubes-usb-proxy whiptail "${PDF_PREVIEW}" ${PRINTER_DRIVERS}
 push_files "${VM_CORE}"
 
 

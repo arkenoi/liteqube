@@ -35,7 +35,7 @@ vm_exists "${VM_VPN}-ssh" && qvm-remove --force "${VM_VPN}-ssh" 2>/dev/null
 message "CLEANUP ${YELLOW}${VM_CORE}"
 push_command "${VM_CORE}" "rm -rf /etc/protect/template.${VM_VPN} 2>/dev/null 1>&2"
 push_command "${VM_CORE}" "rm -rf /etc/protect/template.${VM_VPN}-ssh 2>/dev/null 1>&2"
-push_command "${VM_CORE}" "aptitude -q -y purge dnscrypt-proxy redsocks openvpn"
+push_command "${VM_CORE}" "apt-get -q -y purge --autoremove dnscrypt-proxy redsocks openvpn"
 push_command "${VM_CORE}" "rm /etc/redsocks.conf 2>/dev/null 1>&2"
 push_command "${VM_CORE}" "rm /etc/dnscrypt-proxy/dnscrypt-proxy.toml 2>/dev/null 1>&2"
 push_command "${VM_CORE}" "rm /lib/systemd/system/liteqube-vpn*.service 2>/dev/null 1>&2"
