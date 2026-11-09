@@ -1,8 +1,8 @@
 #!/bin/sh
 
 
-# Package to install in template vm for text editing
-DEFAULT_EDITOR_PKG="vim"
+# Package to install in template vm for text editing (full vim pulls ~40Mb of runtime files)
+DEFAULT_EDITOR_PKG="vim-tiny"
 
 
 #########################################################################
@@ -75,21 +75,21 @@ message "RESTARTING ${YELLOW}${VM_CORE}"
 qvm-shutdown --quiet --wait --force "${VM_CORE}"
 qvm-start --quiet --skip-if-running "${VM_CORE}"
 push_command "${VM_CORE}" "mount / -o rw,remount"
-push_command "${VM_CORE}" "apt-get -y install aptitude"
 
 message "FILTERING PACKAGES INSTALLED IN ${YELLOW}${VM_CORE}"
-install_packages ${VM_CORE} stterm fonts-terminus-otb haveged kmod localepurge parted qubes-vm-dependencies \
-			     whiptail netcat-openbsd openssh-client ca-certificates x11-utils dbus-user-session \
-			     vim-tiny qubes-core-agent-passwordless-root
+install_packages ${VM_CORE} stterm fonts-terminus-otb kmod localepurge parted qubes-vm-dependencies \
+			     netcat-openbsd openssh-client ca-certificates x11-utils dbus-user-session \
+			     qubes-core-agent-passwordless-root
 
-push_command "${VM_CORE}" "apt-get -q -y remove apt-utils cpio cron cron-daemon-common debconf-i18n dirmngr eatmydata gnupg gnupg-l10n gpg gpg-agent gpgconf gpgsm ifupdown iputils-ping less libassuan9:amd64 libbpf1:amd64 libcap2-bin libeatmydata1:amd64 libencode-locale-perl libfdisk1:amd64 libfile-basedir-perl libfile-desktopentry-perl libfile-mimeinfo-perl libgcrypt20:amd64 libgnutls30t64:amd64 libgpg-error0:amd64 libidn2-0:amd64 libipc-system-simple-perl libjansson4:amd64 libksba8:amd64 libldap2:amd64 libmnl0:amd64 libnftables1:amd64 libnftnl11:amd64 libnpth0t64:amd64 libp11-kit0:amd64 libsasl2-2:amd64 libsasl2-modules-db:amd64 libtasn1-6:amd64 libtext-iconv-perl:amd64 libtirpc-common libtirpc3t64:amd64 liburi-perl libutempter0:amd64 libxtables12:amd64 logrotate nano pinentry-curses tasksel tasksel-data vim-tiny xbitmaps"
+push_command "${VM_CORE}" "apt-get -q -y remove apt-utils cpio cron haveged cron-daemon-common debconf-i18n dirmngr eatmydata gnupg gnupg-l10n gpg gpg-agent gpgconf gpgsm ifupdown iputils-ping less libassuan9:amd64 libbpf1:amd64 libcap2-bin libeatmydata1:amd64 libencode-locale-perl libfdisk1:amd64 libfile-basedir-perl libfile-desktopentry-perl libfile-mimeinfo-perl libgcrypt20:amd64 libgnutls30t64:amd64 libgpg-error0:amd64 libidn2-0:amd64 libipc-system-simple-perl libjansson4:amd64 libksba8:amd64 libldap2:amd64 libmnl0:amd64 libnftables1:amd64 libnftnl11:amd64 libnpth0t64:amd64 libp11-kit0:amd64 libsasl2-2:amd64 libsasl2-modules-db:amd64 libtasn1-6:amd64 libtext-iconv-perl:amd64 libtirpc-common libtirpc3t64:amd64 liburi-perl libutempter0:amd64 libxtables12:amd64 logrotate nano pinentry-curses tasksel tasksel-data vim-tiny xbitmaps"
 
 install_packages ${VM_CORE} ${DEFAULT_EDITOR_PKG}
 # x11-server-utils depend on this, but we can still remove
 push_command "${VM_CORE}" "apt-mark hold cpp cpp-14 cpp-x86-64-linux-gnu cpp-14-x86-64-linux-gnu"
 push_command "${VM_CORE}" "dpkg -r --force-depends cpp cpp-14 cpp-x86-64-linux-gnu cpp-14-x86-64-linux-gnu"
-push_command "${VM_CORE}" "aptitude -q -y purge dbus-x11"
-push_command "${VM_CORE}" "aptitude -q -y full-upgrade"
+push_command "${VM_CORE}" "apt-get -q -y purge --autoremove dbus-x11"
+push_command "${VM_CORE}" "apt-get -q -y dist-upgrade"
+push_command "${VM_CORE}" "apt-get -q -y autoremove --purge"
 
 message "ENABLING TEMPLATING SERVICE IN ${YELLOW}${VM_CORE}"
 push_command "${VM_CORE}" "systemctl enable liteqube-vm-template >/dev/null 2>&1" >/dev/null 2>&1
