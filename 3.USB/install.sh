@@ -10,10 +10,18 @@ USB_NO_STRICT_RESET="True"
 # Set to "True" if you want to enable u2f and pkcs11
 USB_SMARTCARD="True"
 
-# Workaround for p11-glue client/server version mismatch
-# typically it is not needed, but sometimes they break things and remote protocol stops working,
-# so we fall back to ugly socket forwarding
-PKCS11_SOCKET="True"
+# p11-kit changed its RPC wire format in 0.25.6 without negotiating it (https://github.com/p11-glue/p11-kit/issues/733):
+# a client whose p11-kit is on the other side of that release than debian-core's (0.25.5 on Debian 13) logs in and
+# lists keys fine but fails at the first signing call. Fedora 42 and later templates are on the new side.
+# Until the fix is released, a p11-kit of the version below is unpacked under /opt/liteqube/p11-kit-<version> in
+# debian-core and liteqube.pkcs11 serves every client with the build speaking its own dialect, told from the
+# protocol version byte that opens each connection. Leave the version empty to skip this. The .debs come from
+# snapshot.debian.org (permanent URLs); sha256 sums are checked in dom0.
+PKCS11_EXTRA_SERVER_VERSION="0.26.5"
+PKCS11_EXTRA_SERVER_DEBS="
+https://snapshot.debian.org/archive/debian/20260815T203404Z/pool/main/p/p11-kit/libp11-kit0_0.26.5-1_amd64.deb 7f6187247766dca57582c4fa327928fb612de3cd17a13786c1762c57357b4930
+https://snapshot.debian.org/archive/debian/20260815T203404Z/pool/main/p/p11-kit/p11-kit_0.26.5-1_amd64.deb 418886fb719c2967bc827206d3e36433a8a25c7c306e0b9480f1e1d919bed033
+"
 
 # Set to "True" to install smartcard diagnostic tools (opensc-tool, pkcs11-tool, p11tool)
 #USB_DEBUG="True"
@@ -108,6 +116,29 @@ if [ x"${USB_SMARTCARD}" = x"True" ] ; then
     push_command "${VM_CORE}" "systemctl daemon-reload" 
     push_command "${VM_CORE}" "systemctl enable pcscd.service" 
     qvm-service -e ${VM_SC} liteqube-pkcs11
+
+    if [ -n "${PKCS11_EXTRA_SERVER_VERSION}" ] ; then
+        message "INSTALLING p11-kit ${YELLOW}${PKCS11_EXTRA_SERVER_VERSION}${PREFIX} SERVER BUILD TO ${YELLOW}${VM_CORE}"
+        EXTRA_DIR="/opt/liteqube/p11-kit-${PKCS11_EXTRA_SERVER_VERSION}"
+        push_command "${VM_CORE}" "rm -rf ${EXTRA_DIR} ; mkdir -p ${EXTRA_DIR}"
+        echo "${PKCS11_EXTRA_SERVER_DEBS}" | while read -r DEB_URL DEB_SHA256 ; do
+            [ -n "${DEB_URL}" ] || continue
+            DEB_FILE="./files/p11-kit/$(basename "${DEB_URL}")"
+            if ! echo "${DEB_SHA256}  ${DEB_FILE}" | sha256sum --check --status 2>/dev/null ; then
+                message "DOWNLOADING ${YELLOW}$(basename "${DEB_URL}")"
+                dom0_download "${DEB_URL}" "${DEB_FILE}"
+                if ! echo "${DEB_SHA256}  ${DEB_FILE}" | sha256sum --check --status ; then
+                    rm -f "${DEB_FILE}"
+                    message "ERROR: CHECKSUM MISMATCH FOR ${YELLOW}${DEB_URL}${PREFIX}, NOT INSTALLING IT"
+                    exit 1
+                fi
+            fi
+            file_to_vm "${DEB_FILE}" "${VM_CORE}" "/tmp/liteqube-p11-kit.deb"
+            push_command "${VM_CORE}" "dpkg -x /tmp/liteqube-p11-kit.deb ${EXTRA_DIR} && rm -f /tmp/liteqube-p11-kit.deb"
+        done
+        # only the remote helper and its library are used, see liteqube.pkcs11
+        push_command "${VM_CORE}" "rm -rf ${EXTRA_DIR}/usr/share ${EXTRA_DIR}/usr/bin ${EXTRA_DIR}/usr/libexec/p11-kit/p11-kit-server"
+    fi
     for VM in ${QUBES_SMARTCARD_CLIENTS} ; do
    	add_permission "pkcs11" "${VM}" "${VM_SC}" "allow target=${VM_SC}"
     done
@@ -123,13 +154,13 @@ if [ x"${USB_SMARTCARD}" = x"True" ] ; then
             TEMPLATE_TYPE="$(vm_type "${TEMPLATE}")"
        	    case "${TEMPLATE_TYPE}" in
        	    debian)
-       	        push_command "${TEMPLATE}" "apt-get install p11-kit ncat"
+       	        push_command "${TEMPLATE}" "apt-get -y install p11-kit ncat"
                 push_command "${TEMPLATE}" "systemctl disable qubes-ctapproxy@${SYS_USB}"
                 push_command "${TEMPLATE}" "systemctl enable qubes-ctapproxy@${VM_SC}"
                 file_to_vm "./files/remote-pkcs11.module" "${TEMPLATE}" "/usr/share/p11-kit/modules/remote-pkcs11.module"
             ;;
             fedora)
-                push_command "${TEMPLATE}" "dnf install qubes-ctap p11-kit nmap-ncat"
+                push_command "${TEMPLATE}" "dnf -y install qubes-ctap p11-kit p11-kit-client nmap-ncat"
                 push_command "${TEMPLATE}" "systemctl disable qubes-ctapproxy@${SYS_USB}"
                 push_command "${TEMPLATE}" "systemctl enable qubes-ctapproxy@${VM_SC}"
                 file_to_vm "./files/remote-pkcs11.module" "${TEMPLATE}" "/usr/share/p11-kit/modules/remote-pkcs11.module"

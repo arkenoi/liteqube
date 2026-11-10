@@ -1,2 +1,45 @@
-#!/bin/sh
-/usr/bin/p11-kit remote /usr/lib/x86_64-linux-gnu/opensc-pkcs11.so
+#!/bin/bash
+
+# Serve opensc's PKCS#11 module to the calling qube over p11-kit RPC.
+#
+# p11-kit 0.25.6 changed the CK_MECHANISM wire encoding without tying it to the negotiated protocol version
+# (p11-glue/p11-kit#733): a client and a server from different sides of that release connect, log in and list
+# objects, then fail at the first call carrying a mechanism, whichever side is the newer one. Every connection
+# opens with a single byte, the highest protocol version the client speaks: 0 or 1 before 0.25.6, 2 from 0.25.6
+# on. Read that byte, serve with a build from the same side (the system p11-kit, or one unpacked under
+# /opt/liteqube/p11-kit-<version> by 3.USB/install.sh) and hand the byte on to it; the build answers the
+# handshake itself. The client needs nothing beyond the plain remote-pkcs11.module.
+
+MODULE="/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so"
+EXTRA_DIR="/opt/liteqube"
+
+# "old" encoding before 0.25.6, "new" from 0.25.6 on
+encoding()
+{
+    if dpkg --compare-versions "${1}" lt 0.25.6 ; then echo old ; else echo new ; fi
+}
+
+# first byte from the client: its highest protocol version (nothing at all: the client is already gone)
+CLIENT_PROTOCOL="$(LC_ALL=C head -c1 | od -An -tu1 | tr -d ' ')"
+[ -n "${CLIENT_PROTOCOL}" ] || exit 0
+if [ "${CLIENT_PROTOCOL}" -ge 2 ] ; then CLIENT_ENCODING="new" ; else CLIENT_ENCODING="old" ; fi
+
+SYSTEM_VERSION="$(/usr/bin/p11-kit --version 2>/dev/null | cut -d' ' -f2)"
+SERVER=(/usr/bin/p11-kit remote "${MODULE}")
+
+if [ -n "${SYSTEM_VERSION}" ] && [ "$(encoding "${SYSTEM_VERSION}")" != "${CLIENT_ENCODING}" ] ; then
+    FOUND=""
+    for DIR in "${EXTRA_DIR}"/p11-kit-* ; do
+        [ -x "${DIR}/usr/libexec/p11-kit/p11-kit-remote" ] || continue
+        [ "$(encoding "${DIR##*/p11-kit-}")" = "${CLIENT_ENCODING}" ] || continue
+        # 'p11-kit remote' would exec the helper at its compiled-in /usr/libexec path, so run this build's helper directly
+        export LD_LIBRARY_PATH="${DIR}/usr/lib/x86_64-linux-gnu"
+        SERVER=("${DIR}/usr/libexec/p11-kit/p11-kit-remote" "${MODULE}")
+        FOUND="${DIR}"
+        break
+    done
+    [ -n "${FOUND}" ] || echo "liteqube.pkcs11: client speaks RPC protocol ${CLIENT_PROTOCOL}, no matching p11-kit build under ${EXTRA_DIR}, using system ${SYSTEM_VERSION}" >&2
+fi
+
+# the chosen build expects the handshake byte first, then the rest of the client's stream
+exec "${SERVER[@]}" < <(printf "\\$(printf '%03o' "${CLIENT_PROTOCOL}")" ; exec cat)

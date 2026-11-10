@@ -1,4 +1,3 @@
 module: p11-kit-client.so
 
-remote: |/bin/sh -c "test -f /var/run/qubes-service/remote-pkcs11 && /usr/bin/qrexec-client-vm TARGET liteqube.pkcs11"
-
+remote: |/bin/sh -c "test -f /var/run/qubes-service/remote-pkcs11 && exec /usr/bin/qrexec-client-vm TARGET liteqube.pkcs11"
