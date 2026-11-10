@@ -117,7 +117,7 @@ To configure it more restrictively you will need to tweak `/etc/usbguard/rules.c
 
 If USB_INPUT_DEVICES is set to True in the installation script (it is by default) then input device policy (/etc/qubes/policy.d/50-config-input.policy) will be installed, allowing dom0 input to come from USB devices. This is a security risk, you've been warned.
 
-Smartcards are served to the qubes listed in QUBES_SMARTCARD_CLIENTS over p11-kit RPC (`liteqube.pkcs11`). p11-kit 0.25.6 changed that protocol's wire format without negotiating it ([p11-glue/p11-kit#733](https://github.com/p11-glue/p11-kit/issues/733)), so a client template whose p11-kit is newer than Debian 13's 0.25.5 (Fedora 42 and later) can log in but not sign. Until the fix is released, the installer unpacks a second p11-kit build (PKCS11_EXTRA_SERVER_VERSION, default 0.26.5 from snapshot.debian.org, sha256-checked) under `/opt/liteqube` in debian-core, each client announces its own p11-kit version in the service argument, and core-usb answers with the build speaking the same dialect.
+Smartcards are served to the qubes listed in QUBES_SMARTCARD_CLIENTS over p11-kit RPC (`liteqube.pkcs11`). p11-kit 0.25.6 changed that protocol's wire format without negotiating it ([p11-glue/p11-kit#733](https://github.com/p11-glue/p11-kit/issues/733)), so a client template whose p11-kit is newer than Debian 13's 0.25.5 (Fedora 42 and later) can log in but not sign. Until the fix is released, the installer unpacks a second p11-kit build (PKCS11_EXTRA_SERVER_VERSION, default 0.26.5 from snapshot.debian.org, sha256-checked) under `/opt/liteqube` in debian-core, and `liteqube.pkcs11` reads the protocol version byte that opens every p11-kit RPC connection and serves with the build speaking that client's dialect. Nothing changes on the client side.
 
 ### VPN
 The intent is to create a fire-and-forget qube that connects to VPN server once started and routes and acts as netvm for any connected qubes, routing all traffic through VPN. There are 3 vpn types currently supported:
@@ -222,7 +222,7 @@ liteqube.TorRestart restarts tor on core-tor
 
 **USB**
 
-liteqube.pkcs11+<client p11-kit version> serves opensc's PKCS#11 module to the calling qube over p11-kit RPC, using a server build whose wire format matches the client's (see the USB section above).
+liteqube.pkcs11 serves opensc's PKCS#11 module to the calling qube over p11-kit RPC, using a server build whose wire format matches the protocol version the client opens the connection with (see the USB section above).
 
 liteqube.SignalStorage is just a generic notifier called from udev rules on core-usb; it reports new block devices, filesystems and its sizes to dom0.
 No special handling on dom0 side exists.

@@ -14,8 +14,9 @@ USB_SMARTCARD="True"
 # a client whose p11-kit is on the other side of that release than debian-core's (0.25.5 on Debian 13) logs in and
 # lists keys fine but fails at the first signing call. Fedora 42 and later templates are on the new side.
 # Until the fix is released, a p11-kit of the version below is unpacked under /opt/liteqube/p11-kit-<version> in
-# debian-core and liteqube.pkcs11 serves every client with the build speaking its own dialect. Leave the version
-# empty to skip this. The .debs come from snapshot.debian.org (permanent URLs); sha256 sums are checked in dom0.
+# debian-core and liteqube.pkcs11 serves every client with the build speaking its own dialect, told from the
+# protocol version byte that opens each connection. Leave the version empty to skip this. The .debs come from
+# snapshot.debian.org (permanent URLs); sha256 sums are checked in dom0.
 PKCS11_EXTRA_SERVER_VERSION="0.26.5"
 PKCS11_EXTRA_SERVER_DEBS="
 https://snapshot.debian.org/archive/debian/20260815T203404Z/pool/main/p/p11-kit/libp11-kit0_0.26.5-1_amd64.deb 7f6187247766dca57582c4fa327928fb612de3cd17a13786c1762c57357b4930
