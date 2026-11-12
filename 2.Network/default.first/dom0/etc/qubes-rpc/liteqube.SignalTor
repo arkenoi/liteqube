@@ -7,19 +7,16 @@ SEND_MESSAGE="True"
 
 case x"${1}" in
     x"100")
-        #[ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"Tor connected\"" >/dev/null 2>&1
-        [ x"${SEND_MESSAGE}" = x"True" ] && sudo -u "#1000" /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"Tor connected\"" >/dev/null 2>&1
+        [ x"${SEND_MESSAGE}" = x"True" ] && /etc/qubes-rpc/liteqube.Message "Tor connected"
         ;;
     x"200")
-        #[ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"Tor disconnected\"" >/dev/null 2>&1
-        [ x"${SEND_MESSAGE}" = x"True" ] && sudo -u "#1000" /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"Tor disconnected\"" >/dev/null 2>&1
+        [ x"${SEND_MESSAGE}" = x"True" ] && /etc/qubes-rpc/liteqube.Message "Tor disconnected"
         ;;
     x"999")
         true
         ;;
     *)
-        #[ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"Tor connecting\"" >/dev/null 2>&1
-        [ x"${SEND_MESSAGE}" = x"True" ] && sudo -u "#1000" /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"Tor connecting\"" >/dev/null 2>&1
+        [ x"${SEND_MESSAGE}" = x"True" ] && /etc/qubes-rpc/liteqube.Message "Tor connecting"
         ;;
 esac
 

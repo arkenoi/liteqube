@@ -7,16 +7,13 @@ BUS=${LINE:25}
 
 case x"${1}" in
     x"connecting")
-        #[ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"VPN connecting\"" >/dev/null 2>&1
-        [ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"VPN connecting\"" >/dev/null 2>&1
+        [ x"${SEND_MESSAGE}" = x"True" ] && /etc/qubes-rpc/liteqube.Message "VPN connecting"
         ;;
     x"connected")
-        #[ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"VPN connected\"" >/dev/null 2>&1
-        [ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"VPN connected\"" >/dev/null 2>&1
+        [ x"${SEND_MESSAGE}" = x"True" ] && /etc/qubes-rpc/liteqube.Message "VPN connected"
         ;;
     x"disconnected")
-        #[ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"VPN disconnecting\"" >/dev/null 2>&1
-        [ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"VPN disconnecting\"" >/dev/null 2>&1
+        [ x"${SEND_MESSAGE}" = x"True" ] && /etc/qubes-rpc/liteqube.Message "VPN disconnecting"
         ;;
 esac
 
