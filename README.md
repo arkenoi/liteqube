@@ -167,8 +167,10 @@ Setup is driven by `/etc/protect` folder that has 4 components:
 
 In dom0,
 
-- liteqube.Message: displays argument as a message (default timeout 2000)
-- liteqube.Error: displays argument as an error notification (default timeout 5000)
+- liteqube.Message: shows the argument as a notification titled with the calling qube's name and carrying the qube's label icon, like stock Qubes notifications (timeout 2000 ms). An underscore in the argument stands for a space; qrexec has already turned every character other than letters, digits and `_.+-` into one.
+- liteqube.Error: the same as a critical notification (timeout 5000 ms)
+
+The liteqube.Signal* services below show their messages through liteqube.Message too.
 
 **Keys and password storage in core-keys**
 

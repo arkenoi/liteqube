@@ -1,17 +1,34 @@
-#!/bin/sh
+#!/bin/bash
 
-#USER="$(ls -1 /home | head -n 1)"
-#BUS="/run/user/1000/bus"
+# Show a message from the calling qube as a desktop notification in dom0.
+#
+# The calling qube controls only the text: the service argument, in which qrexec has already replaced
+# every character other than letters, digits and "_.+-" with "_". Here "_" stands for a space. The title
+# is the qube's name and the icon is the qube's label icon, as on stock Qubes notifications; both come
+# from dom0. The text reaches notify-send as a separate argument after "--", so no shell or option
+# parsing applies to it.
+#
+# liteqube.Error and the liteqube.Signal* services run this script with their own text. They may set
+# LQ_URGENCY and LQ_TIMEOUT; a calling qube cannot set environment variables.
 
-#if [ -d "/home/${USER}/.dbus/session-bus/" ] ; then
-#    LINE="$(cat /home/${USER}/.dbus/session-bus/* | grep DBUS_SESSION_BUS_ADDRESS= | tail -n 1 )"
-#    BUS="${LINE:25}"
-#fi
+TEXT="${1//_/ }"
+[ -n "${TEXT}" ] || exit 0
 
-LINEBREAK="
-"
+QUBE="${QREXEC_REMOTE_DOMAIN:-dom0}"
+URGENCY="${LQ_URGENCY:-normal}"
+TIMEOUT="${LQ_TIMEOUT:-2000}"
 
-#sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"${QREXEC_REMOTE_DOMAIN}$LINEBREAK${1//_/ }\"" >/dev/null 2>&1
-sudo -u "#1000" /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"${QREXEC_REMOTE_DOMAIN}$LINEBREAK${1//_/ }\"" >/dev/null 2>&1
+ICON="$(timeout 5 qvm-prefs "${QUBE}" icon 2>/dev/null)"
+if [ -z "${ICON}" ] ; then
+    if [ x"${URGENCY}" = x"critical" ] ; then ICON="dialog-error" ; else ICON="dialog-information" ; fi
+fi
+
+# dom0 services run as the desktop user, but without its session environment
+BUS="/run/user/$(id -u)/bus"
+[ -S "${BUS}" ] && export DBUS_SESSION_BUS_ADDRESS="unix:path=${BUS}"
+export DISPLAY="${DISPLAY:-:0}"
+
+notify-send --urgency="${URGENCY}" --expire-time="${TIMEOUT}" --icon="${ICON}" --app-name="Qube: ${QUBE}" \
+    -- "${QUBE}" "${TEXT}" >/dev/null 2>&1
 
 exit 0

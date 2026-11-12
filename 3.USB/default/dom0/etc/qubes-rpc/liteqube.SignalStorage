@@ -17,12 +17,10 @@ LINEBREAK="
 
 case x"${ACTION}" in
     x"A")
-        #[ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"Device connected: ${QREXEC_REMOTE_DOMAIN}:$DEVICE $LINEBREAK$FS $SIZE\"" >/dev/null 2>&1
-        [ x"${SEND_MESSAGE}" = x"True" ] && sudo -u "#1000" /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"Device connected: ${QREXEC_REMOTE_DOMAIN}:$DEVICE $LINEBREAK$FS $SIZE\"" >/dev/null 2>&1
+        [ x"${SEND_MESSAGE}" = x"True" ] && /etc/qubes-rpc/liteqube.Message "Device connected: ${DEVICE}${LINEBREAK}${FS} ${SIZE}"
         ;;
     x"R")
-        #[ x"${SEND_MESSAGE}" = x"True" ] && sudo -u user /bin/sh -c "DISPLAY=:0 DBUS_SESSION_BUS_ADDRESS=${BUS} notify-send -u normal -t 2000 -i dialog-information \"Device disconnected: ${QREXEC_REMOTE_DOMAIN}:$DEVICE\"" >/dev/null 2>&1
-        [ x"${SEND_MESSAGE}" = x"True" ] && sudo -u "#1000" /bin/sh -c "DISPLAY=:0 notify-send -u normal -t 2000 -i dialog-information \"Device disconnected: ${QREXEC_REMOTE_DOMAIN}:$DEVICE\"" >/dev/null 2>&1
+        [ x"${SEND_MESSAGE}" = x"True" ] && /etc/qubes-rpc/liteqube.Message "Device disconnected: ${DEVICE}"
         ;;
 esac
 
